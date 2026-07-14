@@ -1,0 +1,13 @@
+{
+  "name": "@booking-ticket-system/source",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {},
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "@nx/js": "23.1.0",
+    "@nx/workspace": "23.1.0",
+    "nx": "23.1.0"
+  }
+}
