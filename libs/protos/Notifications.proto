@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package notification;
+
+service NotificationService {
+  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse);
+}
+
+message SendEmailRequest {}
+
+message SendEmailResponse {}

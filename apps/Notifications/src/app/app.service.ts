@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  getData(): { message: string } {
-    return { message: 'Hello API' };
+  sendEmail(email: string, name: string) {
+    Logger.log(`sendEmail`, `[SendEmail]: ${email}, ${name}`);
   }
 }
