@@ -13,12 +13,12 @@ import { join } from 'path';
         options: {
           package: 'user',
           protoPath: join(process.cwd(), 'libs/protos/Users.proto'),
-          url: 'users-1:50051',
-          // process.env.NODE_ENV === 'development-docker'
-          //   ? 'localhost:50051'
-          //   : process.env.NODE_ENV === 'development'
-          //     ? 'localhost:50051'
-          //     : 'users-1:50051',
+          url:
+            process.env.NODE_ENV === 'development-docker'
+              ? 'users-1:50051'
+              : process.env.NODE_ENV === 'development'
+                ? 'localhost:50051'
+                : 'users-1:50051',
         },
       },
       {
@@ -29,10 +29,10 @@ import { join } from 'path';
           protoPath: join(process.cwd(), 'libs/protos/Notifications.proto'),
           url:
             process.env.NODE_ENV === 'development-docker'
-              ? 'localhost:50052'
+              ? 'notifications-1:50052'
               : process.env.NODE_ENV === 'development'
                 ? 'localhost:50052'
-                : 'notifications:50052',
+                : 'notifications-1:50052',
         },
       },
     ]),

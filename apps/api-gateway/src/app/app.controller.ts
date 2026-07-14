@@ -19,10 +19,6 @@ export class AppController {
 
   @Post('users/register')
   async register(@Body() body: RegisterDto) {
-    Logger.log(
-      process.env.NODE_ENV,
-      '-------------------------------------------------------------------------------------',
-    );
     return this.UsersService.Register(body);
   }
 }

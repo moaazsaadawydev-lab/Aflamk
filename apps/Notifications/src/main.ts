@@ -26,7 +26,12 @@ async function bootstrap() {
     options: {
       package: 'notification',
       protoPath: join(process.cwd(), 'libs/protos/Notifications.proto'),
-      url: 'localhost:5002',
+      url:
+        process.env.NODE_ENV === 'development-docker'
+          ? '0.0.0.0:50052'
+          : process.env.NODE_ENV === 'development'
+            ? 'localhost:50052'
+            : '0.0.0.0:50052',
     },
   });
 

@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Logger } from '@nestjs/common';
 import { AppService } from './app.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import { RegisterDto } from '@booking-ticket-system/DTOs';
@@ -7,8 +7,9 @@ import { RegisterDto } from '@booking-ticket-system/DTOs';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @GrpcMethod("UsersService", "Register")
+  @GrpcMethod('UsersService', 'Register')
   register(registerRequest: RegisterDto) {
+    Logger.log(registerRequest);
     return this.appService.register(registerRequest);
   }
 }
