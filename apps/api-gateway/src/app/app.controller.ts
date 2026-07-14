@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Logger, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 import { RegisterDto } from '@booking-ticket-system/DTOs';
 import { ClientGrpc } from '@nestjs/microservices';
@@ -10,7 +10,7 @@ export class AppController {
   constructor(
     private readonly appService: AppService,
     @Inject('USER_SERVICE')
-    private readonly client: ClientGrpc,  
+    private readonly client: ClientGrpc,
   ) {}
 
   onModuleInit() {
@@ -19,6 +19,10 @@ export class AppController {
 
   @Post('users/register')
   async register(@Body() body: RegisterDto) {
+    Logger.log(
+      process.env.NODE_ENV,
+      '-------------------------------------------------------------------------------------',
+    );
     return this.UsersService.Register(body);
   }
 }
