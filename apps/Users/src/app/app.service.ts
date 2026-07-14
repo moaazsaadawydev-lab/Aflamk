@@ -1,10 +1,37 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { RegisterDto } from '@booking-ticket-system/DTOs';
+import { Users } from '@booking-ticket-system/Entities';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AppService {
-  register(registerDto: RegisterDto) {
-    console.log('registerDto', registerDto);
-    return { message: 'User registered successfully' };
+  constructor(
+    @InjectRepository(Users)
+    private readonly userRepository: Repository<Users>,
+    @Inject('NOTIFICATION_SERVICE')
+    private readonly notificationService: ClientProxy,
+  ) {}
+
+  async register(registerDto: RegisterDto) {
+    const UserExists = await this.userRepository.findOne({
+      where: { email: registerDto.email },
+    });
+
+    if (UserExists) {
+      throw new BadRequestException('This Email is already used');
+    }
+
+    const User = this.userRepository.create(registerDto);
+
+    await this.userRepository.save(User);
+
+    this.notificationService.emit('user_created', {
+      email: User.email,
+      name: User.name,
+    });
+
+    return { message: 'User created successfully' };
   }
 }
