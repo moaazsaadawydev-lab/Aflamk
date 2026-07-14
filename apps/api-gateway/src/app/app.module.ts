@@ -13,12 +13,12 @@ import { join } from 'path';
         options: {
           package: 'user',
           protoPath: join(process.cwd(), 'libs/protos/Users.proto'),
-          url:
-            process.env.NODE_ENV === 'development-docker'
-              ? 'localhost:50051'
-              : process.env.NODE_ENV === 'development'
-                ? 'localhost:50051'
-                : 'users-1:50051',
+          url: 'users-1:50051',
+          // process.env.NODE_ENV === 'development-docker'
+          //   ? 'localhost:50051'
+          //   : process.env.NODE_ENV === 'development'
+          //     ? 'localhost:50051'
+          //     : 'users-1:50051',
         },
       },
       {
