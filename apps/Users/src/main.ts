@@ -12,7 +12,7 @@ async function bootstrap() {
       options: {
         package: 'user',
         protoPath: join(process.cwd(), 'libs/protos/Users.proto'),
-        url: 'users-1:50051',
+        url: '0.0.0.0:50051',
         // process.env.NODE_ENV === 'development-docker'
         //   ? `localhost:${process.env.USERS_GRPC_PORT}`
         //   : process.env.NODE_ENV === 'development'
