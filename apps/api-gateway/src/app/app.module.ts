@@ -18,7 +18,7 @@ import { join } from 'path';
               ? 'localhost:50051'
               : process.env.NODE_ENV === 'development'
                 ? 'localhost:50051'
-                : 'users:50051',
+                : 'users-1:50051',
         },
       },
       {

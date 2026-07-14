@@ -17,7 +17,7 @@ async function bootstrap() {
             ? `localhost:${process.env.USERS_GRPC_PORT}`
             : process.env.NODE_ENV === 'development'
               ? 'localhost:50051'
-              : 'users:50051',
+              : 'users-1:50051',
       },
     },
   );
