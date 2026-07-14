@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "declaration": true,
+    "types": [
+      "node"
+    ],
+    "module": "esnext",
+    "target": "es2021",
+    "moduleResolution": "bundler"
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}
