@@ -1,0 +1,10 @@
+node_modules
+dist
+tmp
+out-tsc
+.nx
+.git
+.vscode
+.idea
+*.log
+libs/env

@@ -12,12 +12,17 @@ async function bootstrap() {
       options: {
         package: 'user',
         protoPath: join(process.cwd(), 'libs/protos/Users.proto'),
-        url: 'localhost:50051',
+        url:
+          process.env.NODE_ENV === 'development-docker'
+            ? `localhost:${process.env.USERS_GRPC_PORT}`
+            : process.env.NODE_ENV === 'development'
+              ? 'localhost:50051'
+              : 'users:50051',
       },
     },
   );
   await app.listen();
-  Logger.log('🚀 Users microservice is running on port 50051');
+  Logger.log(`🚀 Users microservice is running on port 50051`);
 }
 
 bootstrap();
