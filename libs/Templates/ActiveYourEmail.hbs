@@ -1,0 +1,62 @@
+<html lang='ar' dir='rtl'>
+  <head>
+    <meta charset='UTF-8' />
+    <style>
+      .container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        direction: rtl;
+        text-align: right;
+        padding: 30px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+      }
+      .header {
+        color: #2c3e50;
+        font-size: 22px;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+      }
+      .code-box {
+        background-color: #f8f9fa;
+        border: 2px dashed #3498db;
+        padding: 15px;
+        text-align: center;
+        font-size: 28px;
+        font-weight: bold;
+        letter-spacing: 4px;
+        color: #2980b9;
+        margin: 25px 0;
+        border-radius: 6px;
+      }
+      .footer {
+        color: #7f8c8d;
+        font-size: 12px;
+        margin-top: 25px;
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <h2 class='header'>مرحباً بك يا {{name}} 👋</h2>
+      <p>يسعدنا انضمامك إلينا في منصة حجز التذاكر. يرجى استخدام كود التفعيل
+        أدناه لتأكيد حسابك وإتمام عملية التسجيل:</p>
+
+      <div class='code-box'>
+        {{activationCode}}
+      </div>
+
+      <p>هذا الكود صالح لفترة محدودة، برجاء عدم مشاركته مع أي شخص.</p>
+
+      <div class='footer'>
+        إذا لم تقم بإنشاء هذا الحساب، يمكنك تجاهل هذا البريد الإلكتروني بأمان.<br
+        />
+        &copy; 2026 منصة حجز التذاكر. جميع الحقوق محفوظة.
+      </div>
+    </div>
+  </body>
+</html>

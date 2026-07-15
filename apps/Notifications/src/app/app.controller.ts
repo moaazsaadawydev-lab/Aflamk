@@ -7,7 +7,13 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @EventPattern('user_created')
-  handleUserCreated(@Payload() data: { email: string; name: string }) {
-    return this.appService.sendEmail(data.email, data.name);
+  handleUserCreated(
+    @Payload() data: { email: string; name: string; code: number },
+  ) {
+    return this.appService.sendActivationEmail(
+      data.email,
+      data.name,
+      data.code,
+    );
   }
 }

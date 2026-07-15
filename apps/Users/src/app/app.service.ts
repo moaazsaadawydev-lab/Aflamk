@@ -23,13 +23,19 @@ export class AppService {
       throw new BadRequestException('This Email is already used');
     }
 
-    const User = this.userRepository.create(registerDto);
+    const code = Math.floor(100000 + Math.random() * 900000);
+
+    const User = this.userRepository.create({
+      ...registerDto,
+      verificationCode: code,
+    });
 
     await this.userRepository.save(User);
 
     this.notificationService.emit('user_created', {
       email: User.email,
       name: User.name,
+      code,
     });
 
     return { message: 'User created successfully' };

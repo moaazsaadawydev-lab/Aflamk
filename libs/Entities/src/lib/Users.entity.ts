@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import { UserRole } from "@booking-ticket-system/Utils"
+import { UserRole } from '@booking-ticket-system/Utils';
 @Entity()
 export class Users {
   @PrimaryGeneratedColumn('uuid')
@@ -32,8 +32,11 @@ export class Users {
   @Column({ type: 'boolean', default: false })
   isVerified!: boolean;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  verificationCode!: string;
+  @Column({ type: 'int', nullable: true })
+  verificationCode!: number;
+
+  @Column({ type: 'timestamp', nullable: true })
+  verificationCodeExpiresAt!: Date;
 
   @CreateDateColumn({
     type: 'timestamp',

@@ -9,7 +9,6 @@ export class AppController {
 
   @GrpcMethod('UsersService', 'Register')
   register(registerRequest: RegisterDto) {
-    Logger.log(registerRequest);
     return this.appService.register(registerRequest);
   }
 }

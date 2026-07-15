@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Users } from '@booking-ticket-system/Entities';
-import { join } from 'path';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
@@ -12,8 +11,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     TypeOrmModule.forFeature([Users]),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: 'libs/env/.env.development',
-    }), 
+      envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
+    }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -32,7 +31,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         name: 'NOTIFICATION_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://localhost:5672'], 
+          urls: ['amqp://localhost:5672'],
           queue: 'notification_queue',
           queueOptions: { durable: true },
         },
