@@ -4,6 +4,7 @@ import { Users } from '@booking-ticket-system/Entities';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientProxy } from '@nestjs/microservices';
+import { Country, UserGender } from '@booking-ticket-system/Utils';
 
 @Injectable()
 export class AppService {
@@ -25,10 +26,15 @@ export class AppService {
 
     const code = Math.floor(100000 + Math.random() * 900000);
 
-    const User = this.userRepository.create({
-      ...registerDto,
-      verificationCode: code,
-    });
+    const User = this.userRepository.create();
+
+    User.name = registerDto.name;
+    User.email = registerDto.email;
+    User.password = registerDto.password;
+    User.age = registerDto.age;
+    User.gender = registerDto.gender as UserGender;
+    User.country = registerDto.country as Country;
+    User.verificationCode = code;
 
     await this.userRepository.save(User);
 

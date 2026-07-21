@@ -5,8 +5,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Country, UserGender, UserRole } from '@booking-ticket-system/Utils';
 
-import { UserRole } from '@booking-ticket-system/Utils';
 @Entity()
 export class Users {
   @PrimaryGeneratedColumn('uuid')
@@ -20,6 +20,23 @@ export class Users {
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   password!: string;
+
+  @Column({ type: 'int', nullable: false })
+  age!: number;
+
+  @Column({
+    type: 'enum',
+    enum: UserGender,
+    nullable: false,
+  })
+  gender!: UserGender;
+
+  @Column({
+    type: 'enum',
+    enum: Country,
+    nullable: false,
+  })
+  country!: Country;
 
   @Column({
     type: 'enum',
@@ -37,6 +54,15 @@ export class Users {
 
   @Column({ type: 'timestamp', nullable: true })
   verificationCodeExpiresAt!: Date;
+
+  @Column({ type: 'boolean', default: false })
+  isBlocked!: boolean;
+
+  @Column({ type: 'timestamp', nullable: true, default: null })
+  lastBlockedAt!: Date | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, default: null })
+  blockReason!: string | null;
 
   @CreateDateColumn({
     type: 'timestamp',
