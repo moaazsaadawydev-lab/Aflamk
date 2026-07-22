@@ -9,7 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-import { RegisterDto } from '@booking-ticket-system/DTOs';
+import { RegisterDto, VerifyEmailDto } from '@booking-ticket-system/DTOs';
 import { ClientGrpc } from '@nestjs/microservices';
 
 @Controller()
@@ -26,9 +26,15 @@ export class AppController {
     this.UsersService = this.client.getService('UsersService');
   }
 
-  @Post('users/register')
+  @Post('auth/users/register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() body: RegisterDto) {
     return this.UsersService.Register(body);
+  }
+
+  @Post('auth/users/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(@Body() body: VerifyEmailDto) {
+    return this.UsersService.VerifyEmail(body);
   }
 }

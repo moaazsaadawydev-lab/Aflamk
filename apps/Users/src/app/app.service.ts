@@ -1,5 +1,10 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { RegisterDto } from '@booking-ticket-system/DTOs';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
+import { RegisterDto, VerifyEmailDto } from '@booking-ticket-system/DTOs';
 import { Users } from '@booking-ticket-system/Entities';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -29,13 +34,15 @@ export class AppService {
       throw new BadRequestException('This Email is already used');
     }
 
-    const code = randomInt(100000, 1000000);
+    if (registerDto.age < 18) {
+      throw new BadRequestException('You must be at least 18 years old');
+    }
+
+    const code = randomInt(100000, 1000000).toString();
 
     const [passwordHash, verificationCodeHash] = await Promise.all([
-      bcrypt.hash(registerDto.password, 10),
-      Promise.resolve(
-        createHash('sha256').update(code.toString()).digest('hex'),
-      ),
+      bcrypt.hash(registerDto.password, await bcrypt.genSalt(10)),
+      bcrypt.hash(code, await bcrypt.genSalt(10)),
     ]);
 
     const user = this.userRepository.create({
@@ -60,5 +67,40 @@ export class AppService {
     });
 
     return { message: 'User created successfully' };
+  }
+
+  async verifyEmail(verifyEmailDto: VerifyEmailDto) {
+    const user = await this.userRepository.findOne({
+      where: { email: verifyEmailDto.email },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.isVerified) {
+      throw new BadRequestException('User is already verified');
+    }
+
+    const isCodeMatch = await bcrypt.compare(
+      String(verifyEmailDto.code),
+      user.verificationCode,
+    );
+
+    if (!isCodeMatch) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    if (user.verificationCodeExpiresAt < new Date()) {
+      throw new BadRequestException('Verification code expired');
+    }
+
+    user.isVerified = true;
+    user.verificationCode = null;
+    user.verificationCodeExpiresAt = null;
+
+    await this.userRepository.save(user);
+
+    return { message: 'Email verified successfully' };
   }
 }

@@ -4,6 +4,7 @@ package user;
 
 service UsersService {
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse) {}
 }
 
 message RegisterRequest {
@@ -18,5 +19,14 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
+  string message = 1;
+}
+
+message VerifyEmailRequest {
+  string email = 1;
+  int32 code = 2;
+}
+
+message VerifyEmailResponse {
   string message = 1;
 }
