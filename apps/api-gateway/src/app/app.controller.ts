@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Inject, Logger, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Logger,
+  Post,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { RegisterDto } from '@booking-ticket-system/DTOs';
 import { ClientGrpc } from '@nestjs/microservices';
@@ -18,6 +27,7 @@ export class AppController {
   }
 
   @Post('users/register')
+  @HttpCode(HttpStatus.CREATED)
   async register(@Body() body: RegisterDto) {
     return this.UsersService.Register(body);
   }

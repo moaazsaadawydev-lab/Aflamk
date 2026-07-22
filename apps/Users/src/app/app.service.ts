@@ -5,6 +5,9 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 import { Country, UserGender } from '@booking-ticket-system/Utils';
+import * as bcrypt from 'bcryptjs';
+import { randomInt, createHash } from 'crypto';
+import { VERIFICATION_CODE_EXPIRY_MS } from '@booking-ticket-system/Constants';
 
 @Injectable()
 export class AppService {
@@ -16,31 +19,43 @@ export class AppService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const UserExists = await this.userRepository.findOne({
-      where: { email: registerDto.email },
+    const normalizedEmail = registerDto.email.trim().toLowerCase();
+
+    const userExists = await this.userRepository.findOne({
+      where: { email: normalizedEmail },
     });
 
-    if (UserExists) {
+    if (userExists) {
       throw new BadRequestException('This Email is already used');
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000);
+    const code = randomInt(100000, 1000000);
 
-    const User = this.userRepository.create();
+    const [passwordHash, verificationCodeHash] = await Promise.all([
+      bcrypt.hash(registerDto.password, 10),
+      Promise.resolve(
+        createHash('sha256').update(code.toString()).digest('hex'),
+      ),
+    ]);
 
-    User.name = registerDto.name;
-    User.email = registerDto.email;
-    User.password = registerDto.password;
-    User.age = registerDto.age;
-    User.gender = registerDto.gender as UserGender;
-    User.country = registerDto.country as Country;
-    User.verificationCode = code;
+    const user = this.userRepository.create({
+      name: registerDto.name,
+      email: normalizedEmail,
+      password: passwordHash,
+      age: registerDto.age,
+      gender: registerDto.gender as UserGender,
+      country: registerDto.country as Country,
+      verificationCode: verificationCodeHash,
+      verificationCodeExpiresAt: new Date(
+        Date.now() + VERIFICATION_CODE_EXPIRY_MS,
+      ),
+    });
 
-    await this.userRepository.save(User);
+    await this.userRepository.save(user);
 
     this.notificationService.emit('user_created', {
-      email: User.email,
-      name: User.name,
+      email: user.email,
+      name: user.name,
       code,
     });
 

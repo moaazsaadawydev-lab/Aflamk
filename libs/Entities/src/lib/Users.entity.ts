@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Country, UserGender, UserRole } from '@booking-ticket-system/Utils';
+import { TIMESTAMP } from '@booking-ticket-system/Constants';
 
 @Entity()
 export class Users {
@@ -49,8 +50,8 @@ export class Users {
   @Column({ type: 'boolean', default: false })
   isVerified!: boolean;
 
-  @Column({ type: 'int', nullable: true })
-  verificationCode!: number;
+  @Column({ type: 'varchar', nullable: true })
+  verificationCode!: string;
 
   @Column({ type: 'timestamp', nullable: true })
   verificationCodeExpiresAt!: Date;
@@ -66,14 +67,14 @@ export class Users {
 
   @CreateDateColumn({
     type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP(6)',
+    default: () => TIMESTAMP,
   })
   createdAt!: Date;
 
   @UpdateDateColumn({
     type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP(6)',
-    onUpdate: 'CURRENT_TIMESTAMP(6)',
+    default: () => TIMESTAMP,
+    onUpdate: TIMESTAMP,
   })
   updatedAt!: Date;
 }
