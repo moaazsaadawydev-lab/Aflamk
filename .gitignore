@@ -46,3 +46,5 @@ libs/env
 # Next.js
 .next
 out
+
+uploads

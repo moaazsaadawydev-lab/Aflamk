@@ -51,3 +51,9 @@ export enum Country {
   ITALY = 'Italy',
   MEXICO = 'Mexico',
 }
+
+export enum ImageProfileType {
+  AVATAR = 'avatar',
+  MOVIE_THUMBNAIL = 'movie_thumbnail',
+  MOVIE_COVER = 'movie_cover',
+}

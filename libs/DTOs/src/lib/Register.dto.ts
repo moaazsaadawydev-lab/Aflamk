@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsEmail, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEmail,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -24,4 +30,20 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   gender!: string;
+
+  @IsNumber()
+  @IsOptional()
+  cropX?: number;
+
+  @IsNumber()
+  @IsOptional()
+  cropY?: number;
+
+  @IsNumber()
+  @IsOptional()
+  cropWidth?: number;
+
+  @IsNumber()
+  @IsOptional()
+  cropHeight?: number;
 }

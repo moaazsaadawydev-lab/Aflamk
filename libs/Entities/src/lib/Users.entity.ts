@@ -39,6 +39,9 @@ export class Users {
   })
   country!: Country;
 
+  @Column({ type: 'varchar', nullable: true, default: null })
+  avatarKey!: string | null;
+
   @Column({
     type: 'enum',
     enum: UserRole,

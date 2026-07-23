@@ -9,12 +9,14 @@
     "start:api:dev": "cross-env NODE_ENV=development nx serve api-gateway --watch --verbose",
     "start:catalog:dev": "cross-env NODE_ENV=development nx serve catalog --watch --verbose",
     "start:notifications:dev": "cross-env NODE_ENV=development nx serve Notifications --watch --verbose",
+    "start:media:dev": "cross-env NODE_ENV=development nx serve Media --watch --verbose",
     "start:all:dev": "cross-env NODE_ENV=development nx run-many --target=serve --all --parallel --watch",
     "start:users:build": "cross-env NODE_ENV=development nx build users",
     "start:auth:build": "cross-env NODE_ENV=development nx build auth",
     "start:booking:build": "cross-env NODE_ENV=development nx build booking",
     "start:payments:build": "cross-env NODE_ENV=development nx build payments",
     "start:api:build": "cross-env NODE_ENV=development nx build api-gateway",
+    "start:media:build": "cross-env NODE_ENV=development nx build Media",
     "start:all:build": "cross-env NODE_ENV=development nx run-many --target=build --all --parallel"
   },
   "private": true,
@@ -33,9 +35,12 @@
     "@swc/core": "~1.15.5",
     "@swc/helpers": "~0.5.18",
     "@types/bcryptjs": "^2.4.6",
+    "@types/fs-extra": "^11.0.4",
+    "@types/multer": "^2.2.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/sharp": "^0.31.1",
     "nx": "23.1.0",
     "prettier": "~3.6.2",
     "tslib": "^2.3.0",
@@ -45,6 +50,7 @@
     "webpack-dev-server": "^5.2.1"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1093.0",
     "@grpc/grpc-js": "^1.14.4",
     "@grpc/proto-loader": "^0.8.1",
     "@nestjs-modules/mailer": "^2.3.7",
@@ -63,6 +69,8 @@
     "class-validator": "^0.15.1",
     "cors": "^2.8.6",
     "cross-env": "^10.1.0",
+    "file-type": "^22.0.1",
+    "fs-extra": "^11.3.6",
     "handlebars": "^4.7.9",
     "next": "~16.1.6",
     "nodemailer": "^9.0.3",
@@ -71,6 +79,7 @@
     "react-dom": "^19.0.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
+    "sharp": "^0.35.3",
     "typeorm": "^1.1.0"
   }
 }

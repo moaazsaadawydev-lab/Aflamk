@@ -24,6 +24,8 @@ export class AppService {
   ) {}
 
   async register(registerDto: RegisterDto) {
+    Logger.log('The request has been reached to register user');
+
     const normalizedEmail = registerDto.email.trim().toLowerCase();
 
     const userExists = await this.userRepository.findOne({
@@ -66,7 +68,26 @@ export class AppService {
       code,
     });
 
-    return { message: 'User created successfully' };
+    return {
+      id: user.id,
+      message: 'User created successfully',
+    };
+  }
+
+  async updateAvatar(userId: string, mediaUrl: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    user.avatarKey = mediaUrl;
+
+    await this.userRepository.save(user);
+
+    return { message: 'Avatar updated successfully' };
   }
 
   async verifyEmail(verifyEmailDto: VerifyEmailDto) {

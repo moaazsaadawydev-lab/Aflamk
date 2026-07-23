@@ -14,12 +14,11 @@ message RegisterRequest {
   string country = 4;
   int32 age = 5;
   string gender = 6;
-  bytes profile_image = 7;
-  string profile_image_name = 8;
 }
 
 message RegisterResponse {
-  string message = 1;
+  string id = 1;
+  string message = 2;
 }
 
 message VerifyEmailRequest {
