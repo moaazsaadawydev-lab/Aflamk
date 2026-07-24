@@ -4,7 +4,11 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { RegisterDto, VerifyEmailDto } from '@booking-ticket-system/DTOs';
+import {
+  LoginDto,
+  RegisterDto,
+  VerifyEmailDto,
+} from '@booking-ticket-system/DTOs';
 import { Users } from '@booking-ticket-system/Entities';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,6 +17,12 @@ import { Country, UserGender } from '@booking-ticket-system/Utils';
 import * as bcrypt from 'bcryptjs';
 import { randomInt, createHash } from 'crypto';
 import { VERIFICATION_CODE_EXPIRY_MS } from '@booking-ticket-system/Constants';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import {
+  AccessPayloadType,
+  RefreshPayloadType,
+} from '@booking-ticket-system/Types';
 
 @Injectable()
 export class AppService {
@@ -21,6 +31,8 @@ export class AppService {
     private readonly userRepository: Repository<Users>,
     @Inject('NOTIFICATION_SERVICE')
     private readonly notificationService: ClientProxy,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -123,5 +135,74 @@ export class AppService {
     await this.userRepository.save(user);
 
     return { message: 'Email verified successfully' };
+  }
+
+  async login(loginDto: LoginDto) {
+    const { email, password } = loginDto;
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await this.userRepository.findOne({
+      where: { email: normalizedEmail },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.isVerified) {
+      throw new BadRequestException('User is not verified');
+    }
+
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordMatch) {
+      throw new BadRequestException('Invalid password');
+    }
+
+    const accessPayload: AccessPayloadType = {
+      id: user.id,
+      role: user.role,
+    };
+
+    const refreshPayload: RefreshPayloadType = {
+      id: user.id,
+    };
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(accessPayload, {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        expiresIn: this.configService.get<string>(
+          'JWT_ACCESS_EXPIRE_IN',
+        ) as any,
+      }),
+      this.jwtService.signAsync(refreshPayload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.get<string>(
+          'JWT_REFRESH_EXPIRE_IN',
+        ) as any,
+      }),
+    ]);
+
+    const salt = await bcrypt.genSalt(10);
+    const refreshTokenHash = await bcrypt.hash(refreshToken, salt);
+
+    user.refreshToken = refreshTokenHash;
+
+    await this.userRepository.save(user);
+
+    return { accessToken, refreshToken };
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    return user;
   }
 }

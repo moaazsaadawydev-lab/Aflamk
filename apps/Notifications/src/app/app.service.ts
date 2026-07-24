@@ -13,7 +13,7 @@ export class AppService {
     try {
       await this.mailerService.sendMail({
         to: email,
-        subject: 'تفعيل حسابك - Booking Tickets',
+        subject: 'Activate Your Account - Aflamak',
         template: 'ActiveYourEmail',
         context: {
           name,

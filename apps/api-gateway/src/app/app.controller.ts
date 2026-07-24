@@ -11,9 +11,15 @@ import {
   UseInterceptors,
   BadRequestException,
   UploadedFile,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-import { RegisterDto, VerifyEmailDto } from '@booking-ticket-system/DTOs';
+import {
+  LoginDto,
+  RegisterDto,
+  VerifyEmailDto,
+} from '@booking-ticket-system/DTOs';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -22,6 +28,9 @@ import * as fs from 'fs-extra';
 import { ImageProfileType } from '@booking-ticket-system/Utils';
 import { lastValueFrom } from 'rxjs';
 import { Users } from '@booking-ticket-system/Entities';
+import { Response } from 'express';
+import { JwtAuthGuard } from '@booking-ticket-system/Guards';
+import { CurrentUser } from '@booking-ticket-system/Decorators';
 
 @Controller()
 export class AppController {
@@ -98,5 +107,36 @@ export class AppController {
   @HttpCode(HttpStatus.OK)
   async verifyEmail(@Body() body: VerifyEmailDto) {
     return this.UsersService.VerifyEmail(body);
+  }
+
+  @Post('auth/users/login')
+  @HttpCode(HttpStatus.OK)
+  async login(
+    @Body() body: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const Tokens: any = await lastValueFrom(this.UsersService.Login(body));
+
+    response.cookie('refreshToken', Tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/auth/refresh',
+    });
+
+    return {
+      accessToken: Tokens.accessToken,
+    };
+  }
+
+  @Get('auth/users/profile')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getProfile(@CurrentUser() user: Users) {
+    const userProfile = await lastValueFrom(
+      this.UsersService.CurrentUser({ id: user?.id }),
+    );
+    return userProfile;
   }
 }

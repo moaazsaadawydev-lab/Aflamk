@@ -68,6 +68,15 @@ export class Users {
   @Column({ type: 'varchar', length: 255, nullable: true, default: null })
   blockReason!: string | null;
 
+  @Column({ type: 'varchar', nullable: true, default: null })
+  passwordResetCode!: string | null;
+
+  @Column({ type: 'timestamp', nullable: true, default: null })
+  passwordResetCodeExpiresAt!: Date | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, default: null })
+  refreshToken!: string | null;
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => TIMESTAMP,

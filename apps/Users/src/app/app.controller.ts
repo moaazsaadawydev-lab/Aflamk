@@ -1,7 +1,11 @@
 import { Controller } from '@nestjs/common';
 import { AppService } from './app.service';
 import { EventPattern, GrpcMethod, Payload } from '@nestjs/microservices';
-import { RegisterDto, VerifyEmailDto } from '@booking-ticket-system/DTOs';
+import {
+  LoginDto,
+  RegisterDto,
+  VerifyEmailDto,
+} from '@booking-ticket-system/DTOs';
 import { ImageProcessedEventPayload } from '@booking-ticket-system/Interfaces';
 
 @Controller()
@@ -27,5 +31,15 @@ export class AppController {
   @GrpcMethod('UsersService', 'VerifyEmail')
   verifyEmail(verifyEmailDto: VerifyEmailDto) {
     return this.appService.verifyEmail(verifyEmailDto);
+  }
+
+  @GrpcMethod('UsersService', 'Login')
+  login(loginDto: LoginDto) {
+    return this.appService.login(loginDto);
+  }
+
+  @GrpcMethod('UsersService', 'CurrentUser')
+  getProfile(@Payload() data: { id: string }) {
+    return this.appService.getProfile(data.id);
   }
 }

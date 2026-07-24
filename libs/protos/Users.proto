@@ -5,6 +5,8 @@ package user;
 service UsersService {
   rpc Register(RegisterRequest) returns (RegisterResponse) {}
   rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse) {}
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  rpc CurrentUser(CurrentUserRequest) returns (CurrentUserResponse) {}
 }
 
 message RegisterRequest {
@@ -28,4 +30,29 @@ message VerifyEmailRequest {
 
 message VerifyEmailResponse {
   string message = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string message = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+}
+
+message CurrentUserRequest {
+  string id = 1;
+}
+
+message CurrentUserResponse {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string avatar_key = 4;
+  string gender = 5;
+  string country = 6;
+  int32 age = 7;
 }

@@ -67,6 +67,7 @@
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "config": "^4.4.2",
     "cors": "^2.8.6",
     "cross-env": "^10.1.0",
     "file-type": "^22.0.1",
