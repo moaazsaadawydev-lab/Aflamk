@@ -21,21 +21,23 @@ async function bootstrap() {
     },
   });
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: {
-      package: 'notification',
-      protoPath: join(process.cwd(), 'libs/protos/Notifications.proto'),
-      url:
-        process.env.NODE_ENV === 'development-docker'
-          ? '0.0.0.0:50052'
-          : process.env.NODE_ENV === 'development'
-            ? 'localhost:50052'
-            : '0.0.0.0:50052',
-    },
-  });
+  // app.connectMicroservice<MicroserviceOptions>({
+  //   transport: Transport.GRPC,
+  //   options: {
+  //     package: 'notification',
+  //     protoPath: join(process.cwd(), 'libs/protos/Notifications.proto'),
+  //     url:
+  //       process.env.NODE_ENV === 'development-docker'
+  //         ? '0.0.0.0:50052'
+  //         : process.env.NODE_ENV === 'development'
+  //           ? 'localhost:50052'
+  //           : '0.0.0.0:50052',
+  //   },
+  // });
 
   await app.startAllMicroservices();
+
+  await app.listen(3002);
 }
 
 bootstrap();

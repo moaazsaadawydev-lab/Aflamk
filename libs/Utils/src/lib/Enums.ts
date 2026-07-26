@@ -57,3 +57,10 @@ export enum ImageProfileType {
   MOVIE_THUMBNAIL = 'movie_thumbnail',
   MOVIE_COVER = 'movie_cover',
 }
+
+export enum NotificationType {
+  NORMAL_MESSAGE = 'NORMAL_MESSAGE',
+  ALERT_MESSAGE = 'ALERT_MESSAGE',
+  WARNING_MESSAGE = 'WARNING_MESSAGE',
+  CRITICAL_MESSAGE = 'CRITICAL_MESSAGE',
+}

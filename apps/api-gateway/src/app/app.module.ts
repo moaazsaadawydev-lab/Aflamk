@@ -20,12 +20,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         options: {
           package: 'user',
           protoPath: join(process.cwd(), 'libs/protos/Users.proto'),
-          url: '0.0.0.0:50051',
-          // process.env.NODE_ENV === 'development-docker'
-          //   ? 'users-1:50051'
-          //   : process.env.NODE_ENV === 'development'
-          //     ? '0.0.0.0:50051'
-          //     : 'users-1:50051',
+          url:
+            process.env.NODE_ENV === 'development-docker'
+              ? 'users-1:50051'
+              : process.env.NODE_ENV === 'development'
+                ? '0.0.0.0:50051'
+                : 'users-1:50051',
         },
       },
       {
@@ -48,6 +48,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         options: {
           urls: ['amqp://guest:guest@localhost:5672'],
           queue: 'media_queue',
+          queueOptions: { durable: true },
+        },
+      },
+      {
+        name: 'NOTIFICATION_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://guest:guest@localhost:5672'],
+          queue: 'notification_queue',
           queueOptions: { durable: true },
         },
       },

@@ -17,6 +17,7 @@ import {
 import { AppService } from './app.service';
 import {
   LoginDto,
+  NotificationDto,
   RegisterDto,
   VerifyEmailDto,
 } from '@booking-ticket-system/DTOs';
@@ -42,6 +43,8 @@ export class AppController {
     private readonly client: ClientGrpc,
     @Inject('MEDIA_SERVICE')
     private readonly mediaRmqClient: ClientProxy,
+    @Inject('NOTIFICATION_SERVICE')
+    private readonly notificationRmqClient: ClientProxy,
   ) {}
 
   onModuleInit() {
@@ -138,5 +141,22 @@ export class AppController {
       this.UsersService.CurrentUser({ id: user?.id }),
     );
     return userProfile;
+  }
+
+  @Post('send-notification')
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtAuthGuard)
+  async sendNotification(
+    @CurrentUser() user: Users,
+    @Body() Dto: NotificationDto,
+  ) {
+    const { UserId, title, body, type } = Dto;
+
+    return this.notificationRmqClient.emit('send_notification', {
+      UserId,
+      title,
+      body,
+      type,
+    });
   }
 }

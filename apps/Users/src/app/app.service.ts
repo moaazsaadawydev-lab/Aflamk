@@ -13,7 +13,11 @@ import { Users } from '@booking-ticket-system/Entities';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientProxy } from '@nestjs/microservices';
-import { Country, UserGender } from '@booking-ticket-system/Utils';
+import {
+  Country,
+  NotificationType,
+  UserGender,
+} from '@booking-ticket-system/Utils';
 import * as bcrypt from 'bcryptjs';
 import { randomInt, createHash } from 'crypto';
 import { VERIFICATION_CODE_EXPIRY_MS } from '@booking-ticket-system/Constants';
@@ -78,6 +82,12 @@ export class AppService {
       email: user.email,
       name: user.name,
       code,
+      dto: {
+        UserId: user.id,
+        title: 'Welcome to Aflamak',
+        body: 'Hi ' + user.name + ', we are happy to have you in our community',
+        type: NotificationType.ALERT_MESSAGE,
+      },
     });
 
     return {
