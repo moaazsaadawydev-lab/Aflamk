@@ -13,6 +13,8 @@ import {
   UploadedFile,
   Res,
   UseGuards,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import {
@@ -29,7 +31,7 @@ import * as fs from 'fs-extra';
 import { ImageProfileType } from '@booking-ticket-system/Utils';
 import { lastValueFrom } from 'rxjs';
 import { Users } from '@booking-ticket-system/Entities';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { JwtAuthGuard } from '@booking-ticket-system/Guards';
 import { CurrentUser } from '@booking-ticket-system/Decorators';
 
@@ -120,16 +122,21 @@ export class AppController {
   ) {
     const Tokens: any = await lastValueFrom(this.UsersService.Login(body));
 
-    response.cookie('refreshToken', Tokens.refreshToken, {
+    Logger.log('2. Tokens: ', Tokens);
+
+    const accessToken = Tokens.accessToken || Tokens.access_token;
+    const refreshToken = Tokens.refreshToken || Tokens.refresh_token;
+
+    response.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/auth/refresh',
+      path: '/api/v1/auth/users/refresh',
     });
 
     return {
-      accessToken: Tokens.accessToken,
+      accessToken,
     };
   }
 
@@ -158,5 +165,44 @@ export class AppController {
       body,
       type,
     });
+  }
+
+  @Post('auth/users/refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshToken = req.cookies.refreshToken;
+
+    Logger.log(refreshToken);
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+
+    const Tokens: any = await lastValueFrom(
+      this.UsersService.RefreshToken({ refresh_token: refreshToken }),
+    );
+
+    Logger.log('4. Tokens: ', Tokens);
+
+    const newAccessToken = Tokens.accessToken || Tokens.access_token;
+    const newRefreshToken = Tokens.refreshToken || Tokens.refresh_token;
+
+    const ref = response.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 2 * 24 * 60 * 60 * 1000,
+      path: '/api/v1/auth/users/refresh',
+    });
+
+    Logger.log(ref);
+    Logger.log(newAccessToken);
+
+    return {
+      accessToken: newAccessToken,
+    };
   }
 }

@@ -12,12 +12,12 @@ async function bootstrap() {
     options: {
       package: 'user',
       protoPath: join(process.cwd(), 'libs/protos/Users.proto'),
-      url: '0.0.0.0:50051',
-      // process.env.NODE_ENV === 'development-docker'
-      //   ? `0.0.0.0:50051`
-      //   : process.env.NODE_ENV === 'development'
-      //     ? 'localhost:50051'
-      //     : '0.0.0.0:50051',
+      url:
+        process.env.NODE_ENV === 'development-docker'
+          ? `0.0.0.0:50051`
+          : process.env.NODE_ENV === 'development'
+            ? 'localhost:50051'
+            : '0.0.0.0:50051',
     },
   });
 

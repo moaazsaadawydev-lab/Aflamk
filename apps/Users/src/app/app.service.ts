@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   LoginDto,
@@ -12,7 +13,7 @@ import {
 import { Users } from '@booking-ticket-system/Entities';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import {
   Country,
   NotificationType,
@@ -201,7 +202,10 @@ export class AppService {
 
     await this.userRepository.save(user);
 
-    return { accessToken, refreshToken };
+    return {
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    };
   }
 
   async getProfile(userId: string) {
@@ -214,5 +218,56 @@ export class AppService {
     }
 
     return user;
+  }
+
+  async refresh(refreshToken: string) {
+    let refreshTokenPayload:
+      | RefreshPayloadType
+      | (RefreshPayloadType & { iat: number; exp: number });
+    try {
+      refreshTokenPayload =
+        await this.jwtService.verifyAsync<RefreshPayloadType>(refreshToken, {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        });
+    } catch (error) {
+      Logger.log('1. Refresh token expired or invalid', error);
+      throw new RpcException('1. Refresh token expired or invalid');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: refreshTokenPayload.id },
+    });
+
+    if (!user) {
+      Logger.log('2. User not found');
+      throw new RpcException('2. User not found');
+    }
+
+    const accessPayload: AccessPayloadType = { id: user.id, role: user.role };
+    const refreshPayload: RefreshPayloadType = { id: user.id };
+
+    const [accessToken, newRefreshToken] = await Promise.all([
+      this.jwtService.signAsync(accessPayload, {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        expiresIn: this.configService.get<string>(
+          'JWT_ACCESS_EXPIRE_IN',
+        ) as any,
+      }),
+      this.jwtService.signAsync(refreshPayload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.get<string>(
+          'JWT_REFRESH_EXPIRE_IN',
+        ) as any,
+      }),
+    ]);
+
+    const salt = await bcrypt.genSalt(10);
+    user.refreshToken = await bcrypt.hash(newRefreshToken, salt);
+    await this.userRepository.save(user);
+    return {
+      message: 'Success',
+      accessToken: accessToken,
+      refreshToken: newRefreshToken,
+    };
   }
 }

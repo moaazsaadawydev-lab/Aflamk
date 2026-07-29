@@ -26,6 +26,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
               : process.env.NODE_ENV === 'development'
                 ? '0.0.0.0:50051'
                 : 'users-1:50051',
+          loader: {
+            keepCase: true,
+          },
         },
       },
       {

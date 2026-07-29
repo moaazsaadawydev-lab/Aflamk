@@ -1,6 +1,11 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { AppService } from './app.service';
-import { EventPattern, GrpcMethod, Payload } from '@nestjs/microservices';
+import {
+  EventPattern,
+  GrpcMethod,
+  Payload,
+  RpcException,
+} from '@nestjs/microservices';
 import {
   LoginDto,
   RegisterDto,
@@ -34,12 +39,30 @@ export class AppController {
   }
 
   @GrpcMethod('UsersService', 'Login')
-  login(loginDto: LoginDto) {
-    return this.appService.login(loginDto);
+  async login(loginDto: LoginDto) {
+    const result = await this.appService.login(loginDto);
+
+    Logger.log('2. Tokens: ', result);
+
+    return result;
   }
 
   @GrpcMethod('UsersService', 'CurrentUser')
   getProfile(@Payload() data: { id: string }) {
     return this.appService.getProfile(data.id);
+  }
+
+  @GrpcMethod('UsersService', 'RefreshToken')
+  refreshToken(data: any) {
+    Logger.log('5. Data: ', data);
+    const token = data?.refresh_token || data?.refreshToken;
+
+    Logger.log('4. Refresh token: ', token);
+
+    if (!token) {
+      throw new RpcException('1. Refresh token missing from request payload');
+    }
+
+    return this.appService.refresh(token);
   }
 }

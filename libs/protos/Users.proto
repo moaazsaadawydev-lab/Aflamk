@@ -7,6 +7,7 @@ service UsersService {
   rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse) {}
   rpc Login(LoginRequest) returns (LoginResponse) {}
   rpc CurrentUser(CurrentUserRequest) returns (CurrentUserResponse) {}
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {}
 }
 
 message RegisterRequest {
@@ -38,9 +39,8 @@ message LoginRequest {
 }
 
 message LoginResponse {
-  string message = 1;
-  string access_token = 2;
-  string refresh_token = 3;
+  string access_token = 1;
+  string refresh_token = 2;
 }
 
 message CurrentUserRequest {
@@ -55,4 +55,14 @@ message CurrentUserResponse {
   string gender = 5;
   string country = 6;
   int32 age = 7;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  string message = 1;
+  string access_token = 2;
+  string refresh_token = 3;
 }
