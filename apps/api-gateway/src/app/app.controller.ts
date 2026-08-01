@@ -73,39 +73,28 @@ export class AppController {
     @Body() body: RegisterDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    try {
-      const user: Users = await lastValueFrom(this.UsersService.Register(body));
+    const cropFields = [
+      body.cropX,
+      body.cropY,
+      body.cropWidth,
+      body.cropHeight,
+    ];
+    const isCropMissing = cropFields.some((v) => v === undefined || v === null);
 
-      if (file) {
-        if (body.cropX && body.cropY && body.cropWidth && body.cropHeight) {
-          this.mediaRmqClient.emit('process_profile_photo', {
-            entityId: user?.id,
-            tempFilePath: file.path,
-            profileType: ImageProfileType.AVATAR,
-            crop: {
-              x: body.cropX,
-              y: body.cropY,
-              width: body.cropWidth,
-              height: body.cropHeight,
-            },
-          });
-        } else {
-          throw new BadRequestException('Crop parameters are required');
-        }
-      }
-    } catch (error) {
-      if (file && file.path) {
-        await fs.remove(file.path).catch(() => null);
-      }
-      Logger.log('Failed to create account');
-      throw new BadRequestException(
-        error.message || 'Failed to create account',
-      );
+    if (file && isCropMissing) {
+      await fs.remove(file.path).catch(() => null);
+      throw new BadRequestException('Crop parameters are required');
     }
 
-    return {
-      message: 'Account created successfully',
+    const registerPayload = {
+      ...body,
+      temp_file_path: file?.path ?? null,
+      cropFields,
     };
+
+    await lastValueFrom(this.UsersService.Register(registerPayload));
+
+    return { message: 'User registered successfully' };
   }
 
   @Post('auth/users/verify')

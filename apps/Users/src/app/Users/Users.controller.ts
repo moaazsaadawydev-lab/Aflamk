@@ -1,5 +1,4 @@
 import { Controller, Logger } from '@nestjs/common';
-import { AppService } from './app.service';
 import {
   EventPattern,
   GrpcMethod,
@@ -12,10 +11,11 @@ import {
   VerifyEmailDto,
 } from '@booking-ticket-system/DTOs';
 import { ImageProcessedEventPayload } from '@booking-ticket-system/Interfaces';
+import { UsersService } from './Users.Service';
 
 @Controller()
-export class AppController {
-  constructor(private readonly appService: AppService) {}
+export class UsersController {
+  constructor(private readonly appService: UsersService) {}
 
   @GrpcMethod('UsersService', 'Register')
   async register(data: RegisterDto) {
@@ -42,8 +42,6 @@ export class AppController {
   async login(loginDto: LoginDto) {
     const result = await this.appService.login(loginDto);
 
-    Logger.log('2. Tokens: ', result);
-
     return result;
   }
 
@@ -54,13 +52,10 @@ export class AppController {
 
   @GrpcMethod('UsersService', 'RefreshToken')
   refreshToken(data: any) {
-    Logger.log('5. Data: ', data);
     const token = data?.refresh_token || data?.refreshToken;
 
-    Logger.log('4. Refresh token: ', token);
-
     if (!token) {
-      throw new RpcException('1. Refresh token missing from request payload');
+      throw new RpcException('Refresh token missing from request payload');
     }
 
     return this.appService.refresh(token);

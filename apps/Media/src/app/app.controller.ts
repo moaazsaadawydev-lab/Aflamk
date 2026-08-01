@@ -13,15 +13,10 @@ export class AppController {
   ) {}
 
   @EventPattern('process_profile_photo')
-  async handleProcessImage(@Payload() data: any) {
+  async handleProcessImage(@Payload() data: ProcessMediaEventDto) {
+    Logger.log('The photo has been sent for processing');
     try {
-      const result = await this.appService.processAndSaveProfilePhoto(
-        data,
-        data.crop?.x,
-        data.crop?.y,
-        data.crop?.width,
-        data.crop?.height,
-      );
+      const result = await this.appService.processAndSaveProfilePhoto(data);
 
       this.rmqClient.emit('profile_photo_processed_success', result);
     } catch (error) {

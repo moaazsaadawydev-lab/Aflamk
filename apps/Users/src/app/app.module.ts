@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Users } from '@booking-ticket-system/Entities';
+import { OutboxMessage, Users } from '@booking-ticket-system/Entities';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { JwtModule } from '@nestjs/jwt';
+import { OutboxModule } from './outbox/outbox.module';
+import { UsersModule } from './Users/Users.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Users]),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
@@ -23,8 +21,10 @@ import { JwtModule } from '@nestjs/jwt';
         username: config.get<string>('DATABASE_USER'),
         password: config.get<string>('DATABASE_PASSWORD'),
         database: config.get<string>('USERS_DATABASE_NAME'),
-        entities: [Users],
-        synchronize: process.env.NODE_ENV === 'development',
+        entities: [Users, OutboxMessage],
+        // migrationsRun: false,
+        // migrations: ['apps/Users/src/migrations/*.ts'],
+        synchronize: false,
       }),
     }),
     ClientsModule.register([
@@ -38,17 +38,21 @@ import { JwtModule } from '@nestjs/jwt';
         },
       },
     ]),
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_ACCESS_SECRET'),
-        signOptions: {
-          expiresIn: config.get<string>('JWT_ACCESS_EXPIRE_IN') as any,
-        },
-      }),
-    }),
+    ClientsModule.registerAsync([
+      {
+        name: 'MEDIA_SERVICE',
+        useFactory: () => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: ['amqp://localhost:5672'],
+            queue: 'media_queue',
+            queueOptions: { durable: true },
+          },
+        }),
+      },
+    ]),
+    UsersModule,
+    OutboxModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

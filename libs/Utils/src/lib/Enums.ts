@@ -58,6 +58,12 @@ export enum ImageProfileType {
   MOVIE_COVER = 'movie_cover',
 }
 
+export enum OutboxStatus {
+  PENDING = 'PENDING',
+  PUBLISHED = 'PUBLISHED',
+  FAILED = 'FAILED',
+}
+
 export enum NotificationType {
   NORMAL_MESSAGE = 'NORMAL_MESSAGE',
   ALERT_MESSAGE = 'ALERT_MESSAGE',

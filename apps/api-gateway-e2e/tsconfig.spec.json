@@ -2,11 +2,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "module": "commonjs",
-    "types": ["jest", "node"]
+    "module": "esnext",
+    "types": ["jest", "node"],
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
-  "include": [
-    "jest.config.ts",
-    "src/**/*.ts"
-  ]
+  "include": ["jest.config.ts", "jest.auth.config.ts", "src/**/*.ts"]
 }

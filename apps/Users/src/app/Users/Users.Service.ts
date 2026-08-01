@@ -10,12 +10,13 @@ import {
   RegisterDto,
   VerifyEmailDto,
 } from '@booking-ticket-system/DTOs';
-import { Users } from '@booking-ticket-system/Entities';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { OutboxMessage, Users } from '@booking-ticket-system/Entities';
+import { QueryDeepPartialEntity, Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import {
   Country,
+  ImageProfileType,
   NotificationType,
   UserGender,
 } from '@booking-ticket-system/Utils';
@@ -28,21 +29,20 @@ import {
   AccessPayloadType,
   RefreshPayloadType,
 } from '@booking-ticket-system/Types';
+import { DataSource } from 'typeorm';
 
 @Injectable()
-export class AppService {
+export class UsersService {
   constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
     @InjectRepository(Users)
     private readonly userRepository: Repository<Users>,
-    @Inject('NOTIFICATION_SERVICE')
-    private readonly notificationService: ClientProxy,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
-    Logger.log('The request has been reached to register user');
-
+  async register(registerDto: any): Promise<any> {
     const normalizedEmail = registerDto.email.trim().toLowerCase();
 
     const userExists = await this.userRepository.findOne({
@@ -50,11 +50,11 @@ export class AppService {
     });
 
     if (userExists) {
-      throw new BadRequestException('This Email is already used');
+      throw new RpcException('This Email is already used');
     }
 
     if (registerDto.age < 18) {
-      throw new BadRequestException('You must be at least 18 years old');
+      throw new RpcException('You must be at least 18 years old');
     }
 
     const code = randomInt(100000, 1000000).toString();
@@ -64,37 +64,67 @@ export class AppService {
       bcrypt.hash(code, await bcrypt.genSalt(10)),
     ]);
 
-    const user = this.userRepository.create({
-      name: registerDto.name,
-      email: normalizedEmail,
-      password: passwordHash,
-      age: registerDto.age,
-      gender: registerDto.gender as UserGender,
-      country: registerDto.country as Country,
-      verificationCode: verificationCodeHash,
-      verificationCodeExpiresAt: new Date(
-        Date.now() + VERIFICATION_CODE_EXPIRY_MS,
-      ),
-    });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    await this.userRepository.save(user);
+    try {
+      const user = queryRunner.manager.create(Users, {
+        name: registerDto.name,
+        email: normalizedEmail,
+        password: passwordHash,
+        age: registerDto.age,
+        gender: registerDto.gender as UserGender,
+        country: registerDto.country as Country,
+        verificationCode: verificationCodeHash,
+        verificationCodeExpiresAt: new Date(
+          Date.now() + VERIFICATION_CODE_EXPIRY_MS,
+        ),
+      });
 
-    this.notificationService.emit('user_created', {
-      email: user.email,
-      name: user.name,
-      code,
-      dto: {
-        UserId: user.id,
-        title: 'Welcome to Aflamak',
-        body: 'Hi ' + user.name + ', we are happy to have you in our community',
-        type: NotificationType.ALERT_MESSAGE,
-      },
-    });
+      await queryRunner.manager.save(user);
 
-    return {
-      id: user.id,
-      message: 'User created successfully',
-    };
+      await queryRunner.manager.save(
+        queryRunner.manager.create(OutboxMessage, {
+          eventType: 'user_created',
+          payload: {
+            email: user.email,
+            name: user.name,
+            code,
+            dto: {
+              UserId: user.id,
+              title: 'Welcome to Aflamak',
+              body: `Hi ${user.name}, we are happy to have you in our community`,
+              type: NotificationType.ALERT_MESSAGE,
+            },
+          },
+        }),
+      );
+
+      if (registerDto.tempFilePath) {
+        Logger.log(registerDto.cropFields);
+        await queryRunner.manager.save(
+          queryRunner.manager.create(OutboxMessage, {
+            eventType: 'process_profile_photo',
+            payload: {
+              entityId: user.id,
+              tempFilePath: registerDto.tempFilePath,
+              profileType: ImageProfileType.AVATAR,
+              crop: registerDto.cropFields,
+            },
+          }),
+        );
+      }
+
+      await queryRunner.commitTransaction();
+
+      return { message: 'User created successfully' };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async updateAvatar(userId: string, mediaUrl: string) {

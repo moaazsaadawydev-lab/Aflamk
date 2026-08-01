@@ -1,0 +1,42 @@
+import { Module } from '@nestjs/common';
+import { UsersController } from './Users.controller';
+import { UsersService } from './Users.Service';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { JwtModule } from '@nestjs/jwt';
+import { Users } from '@booking-ticket-system/Entities';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
+    }),
+    TypeOrmModule.forFeature([Users]),
+    ClientsModule.register([
+      {
+        name: 'NOTIFICATION_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://localhost:5672'],
+          queue: 'notification_queue',
+          queueOptions: { durable: true },
+        },
+      },
+    ]),
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_ACCESS_SECRET'),
+        signOptions: {
+          expiresIn: config.get<string>('JWT_ACCESS_EXPIRE_IN') as any,
+        },
+      }),
+    }),
+  ],
+  controllers: [UsersController],
+  providers: [UsersService],
+})
+export class UsersModule {}

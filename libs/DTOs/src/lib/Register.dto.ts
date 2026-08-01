@@ -4,7 +4,9 @@ import {
   IsEmail,
   IsNumber,
   IsOptional,
+  ValidateIf,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class RegisterDto {
   @IsString()
@@ -31,19 +33,27 @@ export class RegisterDto {
   @IsNotEmpty()
   gender!: string;
 
-  @IsNumber()
+  @ValidateIf((o) => o.hasFile === true)
+  @Transform(({ value }) => (value !== undefined ? Number(value) : value))
+  @IsNumber({}, { message: 'cropX must be a number' })
   @IsOptional()
   cropX?: number;
 
-  @IsNumber()
+  @ValidateIf((o) => o.hasFile === true)
+  @Transform(({ value }) => (value !== undefined ? Number(value) : value))
+  @IsNumber({}, { message: 'cropY must be a number' })
   @IsOptional()
   cropY?: number;
 
-  @IsNumber()
+  @ValidateIf((o) => o.hasFile === true)
+  @Transform(({ value }) => (value !== undefined ? Number(value) : value))
+  @IsNumber({}, { message: 'cropWidth must be a number' })
   @IsOptional()
   cropWidth?: number;
 
-  @IsNumber()
+  @ValidateIf((o) => o.hasFile === true)
+  @Transform(({ value }) => (value !== undefined ? Number(value) : value))
+  @IsNumber({}, { message: 'cropHeight must be a number' })
   @IsOptional()
   cropHeight?: number;
 }

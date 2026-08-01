@@ -10,13 +10,22 @@ service UsersService {
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {}
 }
 
+message CropData {
+  int32 x = 1;
+  int32 y = 2;
+  int32 width = 3;
+  int32 height = 4;
+}
+
 message RegisterRequest {
   string name = 1;
   string email = 2;
   string password = 3;
-  string country = 4;
-  int32 age = 5;
-  string gender = 6;
+  int32 age = 4;
+  string gender = 5;
+  string country = 6;
+  optional string temp_file_path = 7;
+  optional CropData crop = 8;
 }
 
 message RegisterResponse {

@@ -11,13 +11,7 @@ export class AppService {
     private readonly storageStrategy: LocalStorageDriver,
   ) {}
 
-  async processAndSaveProfilePhoto(
-    data: ProcessMediaEventDto,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-  ) {
+  async processAndSaveProfilePhoto(data: ProcessMediaEventDto) {
     if (!(await fs.pathExists(data.tempFilePath))) {
       throw new Error(`Temp file not found at path: ${data.tempFilePath}`);
     }
