@@ -48,3 +48,4 @@ libs/env
 out
 
 uploads
+.geminiignore

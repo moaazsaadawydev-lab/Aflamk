@@ -7,7 +7,9 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "target": "es2015",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["src/**/*.ts"]
 }

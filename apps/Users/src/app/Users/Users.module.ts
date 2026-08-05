@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
 import { Users } from '@booking-ticket-system/Entities';
+import { OutboxModule } from '../outbox/outbox.module';
 
 @Module({
   imports: [
@@ -15,15 +16,18 @@ import { Users } from '@booking-ticket-system/Entities';
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
     }),
     TypeOrmModule.forFeature([Users]),
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'NOTIFICATION_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://localhost:5672'],
-          queue: 'notification_queue',
-          queueOptions: { durable: true },
-        },
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('MQ_URL')],
+            queue: 'notification_queue',
+            queueOptions: { durable: true },
+          },
+        }),
       },
     ]),
     JwtModule.registerAsync({
@@ -35,6 +39,7 @@ import { Users } from '@booking-ticket-system/Entities';
         },
       }),
     }),
+    OutboxModule,
   ],
   controllers: [UsersController],
   providers: [UsersService],

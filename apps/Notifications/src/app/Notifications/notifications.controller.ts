@@ -1,11 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { NotificationService } from './notifications.service';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { NotificationDto } from '@booking-ticket-system/DTOs';
 
 @Controller()
-export class AppController {
-  constructor(private readonly appService: AppService) {}
+export class NotificationController {
+  constructor(private readonly appService: NotificationService) {}
 
   @EventPattern('user_created')
   handleUserCreated(

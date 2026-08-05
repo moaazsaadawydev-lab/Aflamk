@@ -4,10 +4,10 @@ import { NotificationDto } from '@booking-ticket-system/DTOs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NotificationsEntity } from '@booking-ticket-system/Entities';
 import { Repository } from 'typeorm';
-import { NotificationGateway } from './notification.gateway';
+import { NotificationGateway } from '../Gateway/notification.gateway';
 
 @Injectable()
-export class AppService {
+export class NotificationService {
   constructor(
     private readonly mailerService: MailerService,
     @InjectRepository(NotificationsEntity)

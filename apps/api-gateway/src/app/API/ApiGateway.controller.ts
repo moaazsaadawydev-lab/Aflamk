@@ -16,7 +16,7 @@ import {
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AppService } from './app.service';
+import { ApiGatewayService } from './ApiGateway.service';
 import {
   LoginDto,
   NotificationDto,
@@ -28,7 +28,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs-extra';
-import { ImageProfileType } from '@booking-ticket-system/Utils';
 import { lastValueFrom } from 'rxjs';
 import { Users } from '@booking-ticket-system/Entities';
 import { Request, Response } from 'express';
@@ -36,15 +35,13 @@ import { JwtAuthGuard } from '@booking-ticket-system/Guards';
 import { CurrentUser } from '@booking-ticket-system/Decorators';
 
 @Controller()
-export class AppController {
+export class ApiGatewayController {
   private UsersService: any;
 
   constructor(
-    private readonly appService: AppService,
+    private readonly apiService: ApiGatewayService,
     @Inject('USER_SERVICE')
     private readonly client: ClientGrpc,
-    @Inject('MEDIA_SERVICE')
-    private readonly mediaRmqClient: ClientProxy,
     @Inject('NOTIFICATION_SERVICE')
     private readonly notificationRmqClient: ClientProxy,
   ) {}

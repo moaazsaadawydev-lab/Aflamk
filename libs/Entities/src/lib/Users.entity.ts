@@ -89,4 +89,7 @@ export class Users {
     onUpdate: TIMESTAMP,
   })
   updatedAt!: Date;
+
+  @Column({ nullable: true })
+  testField?: string;
 }

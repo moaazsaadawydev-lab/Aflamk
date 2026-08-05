@@ -1,17 +1,22 @@
-import { DataSource } from 'typeorm';
-import { config } from 'dotenv';
+import { DataSource, DataSourceOptions } from 'typeorm';
 import { Users, OutboxMessage } from '@booking-ticket-system/Entities';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-config({ path: `libs/env/.env.${process.env.NODE_ENV}` });
+const envPath = path.resolve(process.cwd(), 'libs/env/.env.development');
+dotenv.config({ path: envPath });
 
-export const AppDataSource = new DataSource({
+export const UsersDataSourceOptions: DataSourceOptions = {
   type: 'postgres',
-  host: process.env.DATABASE_HOST,
-  port: Number(process.env.DATABASE_PORT),
-  username: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.USERS_DATABASE_NAME,
+  host: process.env.DATABASE_HOST || 'localhost',
+  port: Number(process.env.DATABASE_PORT) || 5432,
+  username: process.env.DATABASE_USER || 'postgres',
+  password: process.env.DATABASE_PASSWORD || '624562',
+  database: process.env.USERS_DATABASE_NAME || 'Booking-Users',
   entities: [Users, OutboxMessage],
-  migrations: ['apps/Users/src/migrations/*.ts'],
+  migrations: ['apps/Users/src/db/migrations/*.ts'],
   synchronize: false,
-});
+};
+
+const dataSource = new DataSource(UsersDataSourceOptions);
+export default dataSource;

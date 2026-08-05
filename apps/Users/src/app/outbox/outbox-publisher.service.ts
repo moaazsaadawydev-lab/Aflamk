@@ -34,7 +34,6 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit() {
-    await this.connectListener();
     await this.publishPendingMessages();
   }
 

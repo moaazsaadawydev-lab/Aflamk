@@ -1,21 +1,19 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
-import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationsEntity } from '@booking-ticket-system/Entities';
-import { NotificationGateway } from './notification.gateway';
+import { NotificationsModule } from './Notifications/notifications.module';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { join } from 'path';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 
 @Module({
   imports: [
+    NotificationsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
     }),
-    TypeOrmModule.forFeature([NotificationsEntity]),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
@@ -24,7 +22,7 @@ import { NotificationGateway } from './notification.gateway';
         port: configService.get<number>('DATABASE_PORT'),
         username: configService.get<string>('DATABASE_USER'),
         password: configService.get<string>('DATABASE_PASSWORD'),
-        database: configService.get<string>('Notifications_DATABASE_NAME'),
+        database: configService.get<string>('NOTIFICATIONS_DATABASE_NAME'),
         entities: [NotificationsEntity],
         synchronize: true,
       }),
@@ -54,7 +52,5 @@ import { NotificationGateway } from './notification.gateway';
       }),
     }),
   ],
-  controllers: [AppController],
-  providers: [AppService, NotificationGateway],
 })
 export class AppModule {}

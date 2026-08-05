@@ -1,19 +1,9 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
-import {
-  LoginDto,
-  RegisterDto,
-  VerifyEmailDto,
-} from '@booking-ticket-system/DTOs';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { LoginDto, VerifyEmailDto } from '@booking-ticket-system/DTOs';
 import { OutboxMessage, Users } from '@booking-ticket-system/Entities';
-import { QueryDeepPartialEntity, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { RpcException } from '@nestjs/microservices';
 import {
   Country,
   ImageProfileType,
@@ -21,7 +11,7 @@ import {
   UserGender,
 } from '@booking-ticket-system/Utils';
 import * as bcrypt from 'bcryptjs';
-import { randomInt, createHash } from 'crypto';
+import { randomInt } from 'crypto';
 import { VERIFICATION_CODE_EXPIRY_MS } from '@booking-ticket-system/Constants';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -30,6 +20,7 @@ import {
   RefreshPayloadType,
 } from '@booking-ticket-system/Types';
 import { DataSource } from 'typeorm';
+import { OutboxPublisherService } from '../outbox/outbox-publisher.service';
 
 @Injectable()
 export class UsersService {
@@ -40,6 +31,7 @@ export class UsersService {
     private readonly userRepository: Repository<Users>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly OutboxService: OutboxPublisherService,
   ) {}
 
   async register(registerDto: any): Promise<any> {
@@ -102,7 +94,6 @@ export class UsersService {
       );
 
       if (registerDto.tempFilePath) {
-        Logger.log(registerDto.cropFields);
         await queryRunner.manager.save(
           queryRunner.manager.create(OutboxMessage, {
             eventType: 'process_profile_photo',
@@ -117,6 +108,10 @@ export class UsersService {
       }
 
       await queryRunner.commitTransaction();
+
+      this.OutboxService.publishPendingMessages().catch((err) => {
+        Logger.error(`Immediate publish attempt failed: ${err.message}`);
+      });
 
       return { message: 'User created successfully' };
     } catch (error) {

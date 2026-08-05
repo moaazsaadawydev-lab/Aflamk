@@ -6,11 +6,8 @@
     "module": "esnext",
     "target": "es2021",
     "moduleResolution": "bundler",
-    "types": [
-      "node"
-    ]
+    "types": ["node"],
+    "emitDeclarationOnly": true
   },
-  "include": [
-    "src/**/*.ts"
-  ]
+  "include": ["src/**/*.ts"]
 }

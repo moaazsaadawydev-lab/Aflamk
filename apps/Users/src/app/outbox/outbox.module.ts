@@ -5,7 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { OutboxMessage } from '@booking-ticket-system/Entities';
 import { OutboxPublisherService } from './outbox-publisher.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -18,25 +18,27 @@ import { ConfigModule } from '@nestjs/config';
     ClientsModule.registerAsync([
       {
         name: 'MEDIA_SERVICE',
-        useFactory: () => ({
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
-            urls: ['amqp://localhost:5672'],
+            urls: [configService.get<string>('MQ_URL')],
             queue: 'media_queue',
             queueOptions: { durable: true },
           },
         }),
       },
-    ]),
-    ClientsModule.register([
       {
         name: 'NOTIFICATION_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://localhost:5672'],
-          queue: 'notification_queue',
-          queueOptions: { durable: true },
-        },
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('MQ_URL')],
+            queue: 'notification_queue',
+            queueOptions: { durable: true },
+          },
+        }),
       },
     ]),
   ],

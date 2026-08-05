@@ -15,25 +15,11 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://localhost:5672'],
+      urls: [process.env.MQ_URL],
       queue: 'notification_queue',
       queueOptions: { durable: true },
     },
   });
-
-  // app.connectMicroservice<MicroserviceOptions>({
-  //   transport: Transport.GRPC,
-  //   options: {
-  //     package: 'notification',
-  //     protoPath: join(process.cwd(), 'libs/protos/Notifications.proto'),
-  //     url:
-  //       process.env.NODE_ENV === 'development-docker'
-  //         ? '0.0.0.0:50052'
-  //         : process.env.NODE_ENV === 'development'
-  //           ? 'localhost:50052'
-  //           : '0.0.0.0:50052',
-  //   },
-  // });
 
   await app.startAllMicroservices();
 
