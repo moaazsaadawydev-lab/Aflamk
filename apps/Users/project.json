@@ -5,13 +5,20 @@
   "projectType": "application",
   "targets": {
     "build": {
-      "executor": "@nx/webpack:webpack",
+      "executor": "nx:run-commands",
       "options": {
         "command": "webpack-cli build",
         "env": {
           "NODE_ENV": "production"
         },
         "cwd": "apps/Users"
+      },
+      "configurations": {
+        "development": {
+          "env": {
+            "NODE_ENV": "development"
+          }
+        }
       }
     },
     "prune-lockfile": {

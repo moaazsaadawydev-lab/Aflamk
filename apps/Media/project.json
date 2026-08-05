@@ -11,17 +11,7 @@
         "env": {
           "NODE_ENV": "production"
         },
-        "cwd": "apps/Media",
-        "outputPath": "dist/apps/Media",
-        "main": "apps/Media/src/main.ts",
-        "tsConfig": "apps/Media/tsconfig.app.json",
-        "compiler": "tsc",
-        "additionalEntryPoints": [
-          {
-            "entryName": "db/data-source",
-            "entryPath": "apps/Media/src/db/data-source.ts"
-          }
-        ]
+        "cwd": "apps/Users"
       },
       "configurations": {
         "development": {

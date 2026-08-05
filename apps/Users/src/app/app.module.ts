@@ -21,6 +21,7 @@ import { UsersModule } from './Users/Users.module';
         username: config.get<string>('DATABASE_USER'),
         password: config.get<string>('DATABASE_PASSWORD'),
         database: config.get<string>('USERS_DATABASE_NAME'),
+        entities: [Users, OutboxMessage],
         synchronize: false,
         migrationsRun: false,
         migrations: [__dirname + '/migrations/*{.ts,.js}'],

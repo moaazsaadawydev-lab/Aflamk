@@ -10,7 +10,7 @@ import {
   RegisterDto,
   VerifyEmailDto,
 } from '@booking-ticket-system/DTOs';
-import { ImageProcessedEventPayload } from '@booking-ticket-system/Interfaces';
+import type { ImageProcessedEventPayload } from '@booking-ticket-system/Interfaces';
 import { UsersService } from './Users.Service';
 
 @Controller()
