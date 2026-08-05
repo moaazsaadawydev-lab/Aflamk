@@ -1,25 +1,28 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ImageProcessorService } from './image-processor.service';
-import { LocalStorageDriver } from './Storage/local-storage.driver';
+import { MediaModule } from './Media/Media.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    ClientsModule.register([
+    MediaModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
+    }),
+    ClientsModule.registerAsync([
       {
         name: 'USERS_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: [process.env.MQ_URL],
-          queue: 'users_queue',
-          queueOptions: { durable: true },
-        },
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [config.get<string>('MQ_URL')],
+            queue: 'users_queue',
+            queueOptions: { durable: true },
+          },
+        }),
       },
     ]),
   ],
-  controllers: [AppController],
-  providers: [AppService, ImageProcessorService, LocalStorageDriver],
 })
 export class AppModule {}

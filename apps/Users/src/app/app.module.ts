@@ -27,25 +27,26 @@ import { UsersModule } from './Users/Users.module';
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
       }),
     }),
-    ClientsModule.register([
-      {
-        name: 'NOTIFICATION_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://localhost:5672'],
-          queue: 'notification_queue',
-          queueOptions: { durable: true },
-        },
-      },
-    ]),
     ClientsModule.registerAsync([
       {
         name: 'MEDIA_SERVICE',
-        useFactory: () => ({
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
-            urls: ['amqp://localhost:5672'],
+            urls: [config.get<string>('MQ_URL')],
             queue: 'media_queue',
+            queueOptions: { durable: true },
+          },
+        }),
+      },
+      {
+        inject: [ConfigService],
+        name: 'NOTIFICATION_SERVICE',
+        useFactory: (config: ConfigService) => ({
+          options: {
+            urls: [config.get<string>('MQ_URL')],
+            queue: 'notification_queue',
             queueOptions: { durable: true },
           },
         }),

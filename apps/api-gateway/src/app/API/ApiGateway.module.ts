@@ -13,46 +13,55 @@ import { ApiGatewayService } from './ApiGateway.service';
       isGlobal: true,
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
     }),
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'USER_SERVICE',
-        transport: Transport.GRPC,
-        options: {
-          package: 'user',
-          protoPath: join(process.cwd(), 'libs/protos/Users.proto'),
-          url:
-            process.env.NODE_ENV === 'development-docker'
-              ? 'users-1:50051'
-              : process.env.NODE_ENV === 'development'
-                ? '0.0.0.0:50051'
-                : 'users-1:50051',
-          loader: {
-            keepCase: true,
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.GRPC,
+          options: {
+            package: 'user',
+            protoPath: join(process.cwd(), 'libs/protos/Users.proto'),
+            url:
+              process.env.NODE_ENV === 'development-docker'
+                ? config.get<string>('USERS_GRPC_DEV_DOC_URL')
+                : process.env.NODE_ENV === 'development'
+                  ? config.get<string>('USERS_GRPC_DEV_URL')
+                  : config.get<string>('USERS_GRPC_DEV_DOC_URL'),
+            loader: {
+              keepCase: true,
+            },
           },
-        },
+        }),
       },
       {
         name: 'NOTIFICATION_SERVICE',
-        transport: Transport.GRPC,
-        options: {
-          package: 'notification',
-          protoPath: join(process.cwd(), 'libs/protos/Notifications.proto'),
-          url:
-            process.env.NODE_ENV === 'development-docker'
-              ? 'notifications-1:50052'
-              : process.env.NODE_ENV === 'development'
-                ? 'localhost:50052'
-                : 'notifications-1:50052',
-        },
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.GRPC,
+          options: {
+            package: 'notification',
+            protoPath: join(process.cwd(), 'libs/protos/Notifications.proto'),
+            url:
+              process.env.NODE_ENV === 'development-docker'
+                ? 'notifications-1:50052'
+                : process.env.NODE_ENV === 'development'
+                  ? 'localhost:50052'
+                  : 'notifications-1:50052',
+          },
+        }),
       },
       {
         name: 'NOTIFICATION_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: [process.env.MQ_URL],
-          queue: 'notification_queue',
-          queueOptions: { durable: true },
-        },
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [config.get<string>('MQ_URL')],
+            queue: 'notification_queue',
+            queueOptions: { durable: true },
+          },
+        }),
       },
     ]),
     JwtModule.registerAsync({

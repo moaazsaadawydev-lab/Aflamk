@@ -1,10 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
-import { JwtAuthGuard } from '@booking-ticket-system/Guards';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { config } from 'process';
+import { ConfigModule } from '@nestjs/config';
 import { ApiGatewayModule } from './API/ApiGateway.module';
 
 @Module({
