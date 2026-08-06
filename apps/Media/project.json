@@ -11,7 +11,7 @@
         "env": {
           "NODE_ENV": "production"
         },
-        "cwd": "apps/Users"
+        "cwd": "apps/Media"
       },
       "configurations": {
         "development": {

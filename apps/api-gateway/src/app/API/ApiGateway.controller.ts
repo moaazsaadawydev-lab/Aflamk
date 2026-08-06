@@ -191,4 +191,9 @@ export class ApiGatewayController {
       accessToken: newAccessToken,
     };
   }
+
+  @Get()
+  Greating() {
+    return 'Hello';
+  }
 }

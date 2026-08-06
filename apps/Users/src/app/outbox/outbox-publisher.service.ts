@@ -13,6 +13,7 @@ import { OutboxMessage } from '@booking-ticket-system/Entities';
 import { OutboxStatus } from '@booking-ticket-system/Utils';
 import { Client } from 'pg';
 import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
@@ -101,7 +102,7 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
             ? this.mediaRmqClient
             : this.notificationRmqClient;
 
-        client.emit(message.eventType, message.payload);
+        await firstValueFrom(client.emit(message.eventType, message.payload));
 
         message.status = OutboxStatus.PUBLISHED;
         message.publishedAt = new Date();

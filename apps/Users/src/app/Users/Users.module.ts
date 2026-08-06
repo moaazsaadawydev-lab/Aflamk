@@ -30,6 +30,20 @@ import { OutboxModule } from '../outbox/outbox.module';
         }),
       },
     ]),
+    ClientsModule.registerAsync([
+      {
+        name: 'MEDIA_SERVICE',
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('MQ_URL')],
+            queue: 'media_queue',
+            queueOptions: { durable: true },
+          },
+        }),
+      },
+    ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

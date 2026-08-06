@@ -93,15 +93,18 @@ export class UsersService {
         }),
       );
 
-      if (registerDto.tempFilePath) {
+      const tempFilePath =
+        registerDto.tempFilePath || registerDto.temp_file_path;
+
+      if (tempFilePath) {
         await queryRunner.manager.save(
           queryRunner.manager.create(OutboxMessage, {
             eventType: 'process_profile_photo',
             payload: {
               entityId: user.id,
-              tempFilePath: registerDto.tempFilePath,
+              tempFilePath,
               profileType: ImageProfileType.AVATAR,
-              crop: registerDto.cropFields,
+              crop: registerDto.cropFields || registerDto.crop,
             },
           }),
         );

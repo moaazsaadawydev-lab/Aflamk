@@ -4,16 +4,17 @@ import { AppModule } from './app/app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { config } from 'dotenv';
 
-config({ path: 'libs/env/.env.development' });
-console.log(process.env.MQ_URL);
+config({ path: `libs/env/.env.${process.env.NODE_ENV}` });
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const mqUrl = process.env.MQ_URL || 'amqp://localhost:5672';
+
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: [process.env.MQ_URL],
+      urls: [mqUrl],
       queue: 'media_queue',
       queueOptions: {
         durable: true,
@@ -22,8 +23,12 @@ async function bootstrap() {
   });
 
   await app.startAllMicroservices();
+  await app.init();
 
   Logger.log('🚀 Media Microservice is running on RabbitMQ');
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  Logger.error(`❌ Media Microservice failed to start: ${err.message}`, err.stack);
+  process.exit(1);
+});

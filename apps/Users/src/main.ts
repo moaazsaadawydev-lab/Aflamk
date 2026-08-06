@@ -3,9 +3,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+  const mqUrl = configService.get<string>('MQ_URL');
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
@@ -24,11 +27,12 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: [process.env.MQ_URL],
+      urls: [mqUrl],
       queue: 'users_queue',
       queueOptions: {
         durable: true,
       },
+      noAck: true,
     },
   });
 

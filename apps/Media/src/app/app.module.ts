@@ -13,6 +13,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     ClientsModule.registerAsync([
       {
         name: 'USERS_SERVICE',
+        inject: [ConfigService],
         useFactory: (config: ConfigService) => ({
           transport: Transport.RMQ,
           options: {

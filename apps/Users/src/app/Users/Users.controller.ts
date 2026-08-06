@@ -1,7 +1,8 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import {
   EventPattern,
   GrpcMethod,
+  MessagePattern,
   Payload,
   RpcException,
 } from '@nestjs/microservices';
@@ -25,9 +26,9 @@ export class UsersController {
   }
 
   @EventPattern('profile_photo_processed_success')
-  async handleProfilePhotoProcessed(
-    @Payload() data: ImageProcessedEventPayload,
-  ) {
+  async handleProfilePhotoProcessed(@Payload() data: any) {
+    Logger.log(data);
+    Logger.log('updating');
     if (data.profileType === 'avatar') {
       await this.appService.updateAvatar(data.entityId, data.mediaUrl);
     }

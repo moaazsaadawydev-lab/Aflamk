@@ -9,7 +9,7 @@
     "start:api:dev": "cross-env NODE_ENV=development nx serve api-gateway --watch --verbose",
     "start:catalog:dev": "cross-env NODE_ENV=development nx serve catalog --watch --verbose",
     "start:notifications:dev": "cross-env NODE_ENV=development nx serve Notifications --watch --verbose",
-    "start:media:dev": "cross-env NODE_ENV=development nx serve Media --watch --verbose",
+    "start:media:dev": "cross-env NODE_ENV=development nx serve Media --watch",
     "start:all:dev": "cross-env NODE_ENV=development nx run-many --target=serve --all --parallel --watch",
     "start:users:build": "cross-env NODE_ENV=development nx build users",
     "start:auth:build": "cross-env NODE_ENV=development nx build auth",
