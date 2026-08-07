@@ -1,15 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import sharp from 'sharp';
 import { IMAGE_PROFILES } from './config/image-profiles.config';
-import { ProcessedImageResult } from '@booking-ticket-system/Interfaces';
+import {
+  ProcessedImageResult,
+  CropOptions,
+} from '@booking-ticket-system/Interfaces';
 import { ImageProfileType } from '@booking-ticket-system/Utils';
-
-export interface CropOptions {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 @Injectable()
 export class ImageProcessorService {

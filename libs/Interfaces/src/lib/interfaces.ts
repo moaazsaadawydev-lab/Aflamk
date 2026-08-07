@@ -16,3 +16,10 @@ export interface ProcessedImageResult {
   buffer: Buffer;
   config: ImageProfileConfig;
 }
+
+export interface CropOptions {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
