@@ -27,32 +27,6 @@ import { UsersModule } from './Users/Users.module';
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
       }),
     }),
-    // ClientsModule.registerAsync([
-    //   {
-    //     name: 'MEDIA_SERVICE',
-    //     inject: [ConfigService],
-    //     useFactory: (config: ConfigService) => ({
-    //       transport: Transport.RMQ,
-    //       options: {
-    //         urls: [config.get<string>('MQ_URL')],
-    //         queue: 'media_queue',
-    //         queueOptions: { durable: true },
-    //       },
-    //     }),
-    //   },
-    //   {
-    //     name: 'NOTIFICATION_SERVICE',
-    //     inject: [ConfigService],
-    //     useFactory: (config: ConfigService) => ({
-    //       transport: Transport.RMQ,
-    //       options: {
-    //         urls: [config.get<string>('MQ_URL')],
-    //         queue: 'notification_queue',
-    //         queueOptions: { durable: true },
-    //       },
-    //     }),
-    //   },
-    // ]),
     UsersModule,
     OutboxModule,
   ],
