@@ -7,7 +7,6 @@ import { MinioService } from '@booking-ticket-system/Storage';
 export class MediaService {
   constructor(
     private readonly imageProcessor: ImageProcessorService,
-    // private readonly storageStrategy: LocalStorageDriver,
     private readonly minioService: MinioService,
   ) {}
 
