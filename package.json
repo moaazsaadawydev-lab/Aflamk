@@ -20,9 +20,12 @@
     "start:all:build": "cross-env NODE_ENV=development nx run-many --target=build --all --parallel",
     "test:auth:e2e": "cross-env NODE_ENV=development jest --config apps/api-gateway-e2e/jest.auth.config.ts --runInBand --verbose",
     "typeorm": "typeorm",
-    "migration:generate": "cross-env TS_NODE_PROJECT=tsconfig.base.json node -r @swc-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate apps/Users/src/db/migrations/InitialMigration -d apps/Users/src/db/data-source.ts",
-    "migration:run": "cross-env TS_NODE_PROJECT=tsconfig.base.json node -r @swc-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d apps/Users/src/db/data-source.ts",
-    "migration:revert": "cross-env TS_NODE_PROJECT=tsconfig.base.json node -r @swc-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d apps/Users/src/db/data-source.ts"
+    "migration:generate:users": "cross-env TS_NODE_PROJECT=tsconfig.base.json node -r @swc-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate apps/Users/src/db/migrations/InitialMigration -d apps/Users/src/db/data-source.ts",
+    "migration:run:users": "cross-env TS_NODE_PROJECT=tsconfig.base.json node -r @swc-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d apps/Users/src/db/data-source.ts",
+    "migration:revert:users": "cross-env TS_NODE_PROJECT=tsconfig.base.json node -r @swc-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d apps/Users/src/db/data-source.ts",
+    "migration:generate:notifications": "cross-env TS_NODE_PROJECT=tsconfig.base.json node -r @swc-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate apps/Notifications/src/db/migrations/InitialMigration -d apps/Notifications/src/db/data-source.ts",
+    "migration:run:notifications": "cross-env TS_NODE_PROJECT=tsconfig.base.json node -r @swc-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d apps/Notifications/src/db/data-source.ts",
+    "migration:revert:notifications": "cross-env TS_NODE_PROJECT=tsconfig.base.json node -r @swc-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d apps/Notifications/src/db/data-source.ts"
   },
   "private": true,
   "devDependencies": {

@@ -24,7 +24,9 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.ad
         password: configService.get<string>('DATABASE_PASSWORD'),
         database: configService.get<string>('NOTIFICATIONS_DATABASE_NAME'),
         entities: [NotificationsEntity],
-        synchronize: true,
+        synchronize: false,
+        migrationsRun: false,
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
       }),
     }),
     MailerModule.forRootAsync({

@@ -10,20 +10,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       isGlobal: true,
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
     }),
-    ClientsModule.registerAsync([
-      {
-        name: 'USERS_SERVICE',
-        inject: [ConfigService],
-        useFactory: (config: ConfigService) => ({
-          transport: Transport.RMQ,
-          options: {
-            urls: [config.get<string>('MQ_URL')],
-            queue: 'users_queue',
-            queueOptions: { durable: true },
-          },
-        }),
-      },
-    ]),
   ],
 })
 export class AppModule {}

@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { MediaController } from './Media.controller';
 import { MediaService } from './Media.service';
 import { ImageProcessorService } from './image-processor.service';
-// import { LocalStorageDriver } from '../Storage/local-storage.driver';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { StorageModule } from '@booking-ticket-system/Storage';

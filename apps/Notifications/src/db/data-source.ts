@@ -1,5 +1,5 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { Users, OutboxMessage } from '@booking-ticket-system/Entities';
+import { NotificationsEntity } from '@booking-ticket-system/Entities';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -12,9 +12,9 @@ export const UsersDataSourceOptions: DataSourceOptions = {
   port: Number(process.env.DATABASE_PORT),
   username: process.env.DATABASE_USER,
   password: process.env.DATABASE_PASSWORD,
-  database: process.env.USERS_DATABASE_NAME,
-  entities: [Users, OutboxMessage],
-  migrations: ['apps/Users/src/db/migrations/*.ts'],
+  database: process.env.NOTIFICATIONS_DATABASE_NAME,
+  entities: [NotificationsEntity],
+  migrations: ['apps/Notifications/src/db/migrations/*.ts'],
   synchronize: false,
 };
 
