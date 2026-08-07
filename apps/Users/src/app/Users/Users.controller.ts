@@ -19,7 +19,7 @@ export class UsersController {
   constructor(private readonly appService: UsersService) {}
 
   @GrpcMethod('UsersService', 'Register')
-  async register(data: RegisterDto) {
+  async register(data: any) {
     const createdUser = await this.appService.register(data);
 
     return createdUser;
@@ -27,8 +27,6 @@ export class UsersController {
 
   @EventPattern('profile_photo_processed_success')
   async handleProfilePhotoProcessed(@Payload() data: any) {
-    Logger.log(data);
-    Logger.log('updating');
     if (data.profileType === 'avatar') {
       await this.appService.updateAvatar(data.entityId, data.mediaUrl);
     }

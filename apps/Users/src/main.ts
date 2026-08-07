@@ -39,7 +39,7 @@ async function bootstrap() {
   await app.startAllMicroservices();
   await app.init();
 
-  Logger.log(`🚀 Users microservice is running on port 50051`);
+  Logger.log(`Users microservice is running on port 50051`);
 }
 
 bootstrap();

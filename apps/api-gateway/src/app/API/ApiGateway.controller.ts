@@ -25,7 +25,7 @@ import {
 } from '@booking-ticket-system/DTOs';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { diskStorage, memoryStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs-extra';
 import { lastValueFrom } from 'rxjs';
@@ -33,6 +33,8 @@ import { Users } from '@booking-ticket-system/Entities';
 import { Request, Response } from 'express';
 import { JwtAuthGuard } from '@booking-ticket-system/Guards';
 import { CurrentUser } from '@booking-ticket-system/Decorators';
+import { MinioService } from '@booking-ticket-system/Storage';
+import { randomBytes } from 'crypto';
 
 @Controller()
 export class ApiGatewayController {
@@ -44,6 +46,7 @@ export class ApiGatewayController {
     private readonly client: ClientGrpc,
     @Inject('NOTIFICATION_SERVICE')
     private readonly notificationRmqClient: ClientProxy,
+    private readonly minioService: MinioService,
   ) {}
 
   onModuleInit() {
@@ -54,44 +57,56 @@ export class ApiGatewayController {
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(
     FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: './uploads/temp',
-        filename: (req, file, cb) => {
-          const randomName = Array(32)
-            .fill(null)
-            .map(() => Math.round(Math.random() * 16).toString(16))
-            .join('');
-          cb(null, `${randomName}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   async register(
     @Body() body: RegisterDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const cropFields = [
-      body.cropX,
-      body.cropY,
-      body.cropWidth,
-      body.cropHeight,
-    ];
+    const cropFields = [body.x, body.y, body.width, body.height];
     const isCropMissing = cropFields.some((v) => v === undefined || v === null);
 
     if (file && isCropMissing) {
-      await fs.remove(file.path).catch(() => null);
+      Logger.log('Crop parameters are required');
       throw new BadRequestException('Crop parameters are required');
     }
 
-    const registerPayload = {
-      ...body,
-      temp_file_path: file?.path ?? null,
-      cropFields,
-    };
+    let objectKey: string | null = null;
 
-    await lastValueFrom(this.UsersService.Register(registerPayload));
+    if (file) {
+      try {
+        objectKey = `temp/${randomBytes(16).toString('hex')}${extname(file.originalname)}`;
+        await this.minioService.uploadBuffer(
+          file.buffer,
+          objectKey,
+          file.mimetype,
+        );
+      } catch (error) {
+        Logger.error(`Failed to upload temp file to MinIO: ${error.message}`);
+        throw new BadRequestException('Failed to process uploaded image');
+      }
+    }
 
-    return { message: 'User registered successfully' };
+    try {
+      const registerPayload = {
+        ...body,
+        temp_object_key: objectKey,
+      };
+
+      await lastValueFrom(this.UsersService.Register(registerPayload));
+    } catch (error) {
+      if (objectKey) {
+        await this.minioService.deleteObject(objectKey).catch(() => null);
+      }
+      Logger.log('Failed to create account');
+      throw new BadRequestException(
+        error.message || 'Failed to create account',
+      );
+    }
+
+    return { message: 'Account created successfully' };
   }
 
   @Post('auth/users/verify')
@@ -107,8 +122,6 @@ export class ApiGatewayController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const Tokens: any = await lastValueFrom(this.UsersService.Login(body));
-
-    Logger.log('2. Tokens: ', Tokens);
 
     const accessToken = Tokens.accessToken || Tokens.access_token;
     const refreshToken = Tokens.refreshToken || Tokens.refresh_token;
@@ -161,8 +174,6 @@ export class ApiGatewayController {
   ) {
     const refreshToken = req.cookies.refreshToken;
 
-    Logger.log(refreshToken);
-
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token is required');
     }
@@ -170,8 +181,6 @@ export class ApiGatewayController {
     const Tokens: any = await lastValueFrom(
       this.UsersService.RefreshToken({ refresh_token: refreshToken }),
     );
-
-    Logger.log('4. Tokens: ', Tokens);
 
     const newAccessToken = Tokens.accessToken || Tokens.access_token;
     const newRefreshToken = Tokens.refreshToken || Tokens.refresh_token;
@@ -184,16 +193,8 @@ export class ApiGatewayController {
       path: '/api/v1/auth/users/refresh',
     });
 
-    Logger.log(ref);
-    Logger.log(newAccessToken);
-
     return {
       accessToken: newAccessToken,
     };
-  }
-
-  @Get()
-  Greating() {
-    return 'Hello';
   }
 }

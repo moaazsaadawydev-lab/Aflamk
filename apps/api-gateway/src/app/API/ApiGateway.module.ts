@@ -6,9 +6,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ApiGatewayController } from './ApiGateway.controller';
 import { ApiGatewayService } from './ApiGateway.service';
+import { StorageModule } from '@booking-ticket-system/Storage';
 
 @Module({
   imports: [
+    StorageModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,

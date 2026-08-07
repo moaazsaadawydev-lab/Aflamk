@@ -93,16 +93,16 @@ export class UsersService {
         }),
       );
 
-      const tempFilePath =
-        registerDto.tempFilePath || registerDto.temp_file_path;
+      const tempObjectKey =
+        registerDto.tempObjectKey || registerDto.temp_object_key;
 
-      if (tempFilePath) {
+      if (tempObjectKey) {
         await queryRunner.manager.save(
           queryRunner.manager.create(OutboxMessage, {
             eventType: 'process_profile_photo',
             payload: {
               entityId: user.id,
-              tempFilePath,
+              tempObjectKey,
               profileType: ImageProfileType.AVATAR,
               crop: registerDto.cropFields || registerDto.crop,
             },
@@ -258,7 +258,6 @@ export class UsersService {
           secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
         });
     } catch (error) {
-      Logger.log('1. Refresh token expired or invalid', error);
       throw new RpcException('1. Refresh token expired or invalid');
     }
 
@@ -267,7 +266,6 @@ export class UsersService {
     });
 
     if (!user) {
-      Logger.log('2. User not found');
       throw new RpcException('2. User not found');
     }
 

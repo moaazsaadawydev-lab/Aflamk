@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import sharp from 'sharp';
-import { IMAGE_PROFILES } from '../config/image-profiles.config';
+import { IMAGE_PROFILES } from './config/image-profiles.config';
 import { ProcessedImageResult } from '@booking-ticket-system/Interfaces';
 import { ImageProfileType } from '@booking-ticket-system/Utils';
 

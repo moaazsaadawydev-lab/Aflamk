@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Logger } from '@nestjs/common';
 import { NotificationService } from './notifications.service';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { NotificationDto } from '@booking-ticket-system/DTOs';

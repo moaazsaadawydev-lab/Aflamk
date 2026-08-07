@@ -23,7 +23,8 @@
       "@booking-ticket-system/Utils": ["./libs/Utils/src/index.ts"],
       "@booking-ticket-system/Constants": ["./libs/Constants/src/index.ts"],
       "@booking-ticket-system/Guards": ["./libs/Guards/src/index.ts"],
-      "@booking-ticket-system/Decorators": ["./libs/Decorators/src/index.ts"]
+      "@booking-ticket-system/Decorators": ["./libs/Decorators/src/index.ts"],
+      "@booking-ticket-system/Storage": ["./libs/Storage/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

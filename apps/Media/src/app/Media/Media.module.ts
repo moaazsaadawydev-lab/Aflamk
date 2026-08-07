@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { MediaController } from './Media.controller';
 import { MediaService } from './Media.service';
 import { ImageProcessorService } from './image-processor.service';
-import { LocalStorageDriver } from '../Storage/local-storage.driver';
+// import { LocalStorageDriver } from '../Storage/local-storage.driver';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { StorageModule } from '@booking-ticket-system/Storage';
 
 @Module({
   imports: [
+    StorageModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
@@ -28,6 +30,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     ]),
   ],
   controllers: [MediaController],
-  providers: [MediaService, ImageProcessorService, LocalStorageDriver],
+  providers: [MediaService, ImageProcessorService],
 })
 export class MediaModule {}

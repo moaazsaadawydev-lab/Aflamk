@@ -37,23 +37,23 @@ export class RegisterDto {
   @Transform(({ value }) => (value !== undefined ? Number(value) : value))
   @IsNumber({}, { message: 'cropX must be a number' })
   @IsOptional()
-  cropX?: number;
+  x?: number;
 
   @ValidateIf((o) => o.hasFile === true)
   @Transform(({ value }) => (value !== undefined ? Number(value) : value))
   @IsNumber({}, { message: 'cropY must be a number' })
   @IsOptional()
-  cropY?: number;
+  y?: number;
 
   @ValidateIf((o) => o.hasFile === true)
   @Transform(({ value }) => (value !== undefined ? Number(value) : value))
   @IsNumber({}, { message: 'cropWidth must be a number' })
   @IsOptional()
-  cropWidth?: number;
+  width?: number;
 
   @ValidateIf((o) => o.hasFile === true)
   @Transform(({ value }) => (value !== undefined ? Number(value) : value))
   @IsNumber({}, { message: 'cropHeight must be a number' })
   @IsOptional()
-  cropHeight?: number;
+  height?: number;
 }

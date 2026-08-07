@@ -1,40 +1,38 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ImageProcessorService } from '../Media/image-processor.service';
-import { LocalStorageDriver } from '../Storage/local-storage.driver';
 import { ProcessMediaEventDto } from '@booking-ticket-system/DTOs';
-import * as fs from 'fs-extra';
+import { MinioService } from '@booking-ticket-system/Storage';
 
 @Injectable()
 export class MediaService {
   constructor(
     private readonly imageProcessor: ImageProcessorService,
-    private readonly storageStrategy: LocalStorageDriver,
+    // private readonly storageStrategy: LocalStorageDriver,
+    private readonly minioService: MinioService,
   ) {}
 
-  async processAndSaveProfilePhoto(data: ProcessMediaEventDto) {
-    if (!(await fs.pathExists(data.tempFilePath))) {
-      throw new Error(`Temp file not found at path: ${data.tempFilePath}`);
-    }
-    const rawBuffer = await fs.readFile(data.tempFilePath);
+  async processAndSaveProfilePhoto(data: any) {
+    const rawBuffer = await this.minioService.getBuffer(data.tempObjectKey);
 
-    const { buffer, config } = await this.imageProcessor.processImageByProfile(
+    const { buffer } = await this.imageProcessor.processImageByProfile(
       rawBuffer,
       data.profileType,
     );
 
-    const filename = `${data.profileType}-${data.entityId}-${Date.now()}.webp`;
-    const uploadResult = await this.storageStrategy.upload(
-      buffer,
-      filename,
-      config.folder,
-    );
+    const filename = `avatar/${data.profileType}-${data.entityId}-${Date.now()}.webp`;
+    await this.minioService.uploadBuffer(buffer, filename, 'image/webp');
 
-    await fs.remove(data.tempFilePath);
+    await this.minioService.deleteObject(data.tempObjectKey);
+
+    const mediaUrl = await this.minioService.getPresignedUrl(
+      filename,
+      3600 * 24 * 7,
+    );
 
     return {
       entityId: data.entityId,
       profileType: data.profileType,
-      mediaUrl: uploadResult.url,
+      mediaUrl,
     };
   }
 }

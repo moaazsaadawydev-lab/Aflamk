@@ -25,10 +25,10 @@ async function bootstrap() {
   await app.startAllMicroservices();
   await app.init();
 
-  Logger.log('🚀 Media Microservice is running on RabbitMQ');
+  Logger.log('Media Microservice is running on RabbitMQ');
 }
 
 bootstrap().catch((err) => {
-  Logger.error(`❌ Media Microservice failed to start: ${err.message}`, err.stack);
+  Logger.error(`Media Microservice failed to start: ${err.message}`, err.stack);
   process.exit(1);
 });

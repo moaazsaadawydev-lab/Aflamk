@@ -7,14 +7,14 @@ import { firstValueFrom } from 'rxjs';
 @Controller()
 export class MediaController {
   constructor(
-    private readonly appService: MediaService,
+    private readonly MediaService: MediaService,
     @Inject('USERS_SERVICE') private readonly rmqClient: ClientProxy,
   ) {}
 
   @EventPattern('process_profile_photo')
-  async handleProcessImage(@Payload() data: ProcessMediaEventDto) {
+  async handleProcessImage(@Payload() data: any) {
     try {
-      const result = await this.appService.processAndSaveProfilePhoto(data);
+      const result = await this.MediaService.processAndSaveProfilePhoto(data);
 
       await firstValueFrom(
         this.rmqClient.emit('profile_photo_processed_success', result),

@@ -24,7 +24,7 @@ message RegisterRequest {
   int32 age = 4;
   string gender = 5;
   string country = 6;
-  optional string temp_file_path = 7;
+  optional string temp_object_key = 7;
   optional CropData crop = 8;
 }
 
