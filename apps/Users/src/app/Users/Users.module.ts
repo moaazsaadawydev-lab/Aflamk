@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
 import { UsersController } from './Users.controller';
 import { UsersService } from './Users.Service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
 import { Users } from '@booking-ticket-system/Entities';
 import { OutboxModule } from '../outbox/outbox.module';
+import {
+  RegistrationProvider,
+  AuthProvider,
+  ProfileProvider,
+} from './Providers';
 
 @Module({
   imports: [
@@ -56,6 +60,11 @@ import { OutboxModule } from '../outbox/outbox.module';
     OutboxModule,
   ],
   controllers: [UsersController],
-  providers: [UsersService],
+  providers: [
+    UsersService,
+    RegistrationProvider,
+    AuthProvider,
+    ProfileProvider,
+  ],
 })
 export class UsersModule {}

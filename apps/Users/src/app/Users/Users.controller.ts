@@ -1,9 +1,11 @@
-import { Controller, Logger } from '@nestjs/common';
+import { BadRequestException, Controller, Logger } from '@nestjs/common';
 import {
+  Ctx,
   EventPattern,
   GrpcMethod,
   MessagePattern,
   Payload,
+  RmqContext,
   RpcException,
 } from '@nestjs/microservices';
 import {
@@ -11,11 +13,12 @@ import {
   RegisterDto,
   VerifyEmailDto,
 } from '@booking-ticket-system/DTOs';
-import type { ImageProcessedEventPayload } from '@booking-ticket-system/Interfaces';
 import { UsersService } from './Users.Service';
 
 @Controller()
 export class UsersController {
+  private readonly logger = new Logger(UsersController.name);
+
   constructor(private readonly appService: UsersService) {}
 
   @GrpcMethod('UsersService', 'Register')
@@ -26,9 +29,31 @@ export class UsersController {
   }
 
   @EventPattern('profile_photo_processed_success')
-  async handleProfilePhotoProcessed(@Payload() data: any) {
-    if (data.profileType === 'avatar') {
-      await this.appService.updateAvatar(data.entityId, data.mediaUrl);
+  async handleProfilePhotoProcessed(
+    @Payload() data: any,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      if (data.profileType === 'avatar') {
+        await this.appService.updateAvatar(data.entityId, data.mediaUrl);
+      }
+
+      channel.ack(originalMsg);
+    } catch (error) {
+      this.logger.error(
+        `Failed to update avatar for user ${data.entityId}: ${error.message}`,
+      );
+
+      if (error instanceof BadRequestException) {
+        channel.ack(originalMsg); // نقفلها كخسارة معروفة، مش نسيبها تلف للأبد
+        return;
+      }
+
+      const isRedelivered = originalMsg.fields.redelivered;
+      channel.nack(originalMsg, false, !isRedelivered);
     }
   }
 
