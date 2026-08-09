@@ -59,7 +59,12 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
             ? this.mediaRmqClient
             : this.notificationRmqClient;
 
-        await firstValueFrom(client.emit(message.eventType, message.payload))
+        await firstValueFrom(
+          client.emit(message.eventType, {
+            eventId: message.id,
+            ...message.payload,
+          }),
+        )
           .then((res) => {
             Logger.log('sent successfully', res);
           })

@@ -18,12 +18,12 @@ async function bootstrap() {
       urls: [process.env.MQ_URL],
       queue: 'notification_queue',
       queueOptions: { durable: true },
+      noAck: false,
     },
   });
 
   await app.startAllMicroservices();
-
-  await app.listen(3002);
+  await app.init();
 }
 
 bootstrap();

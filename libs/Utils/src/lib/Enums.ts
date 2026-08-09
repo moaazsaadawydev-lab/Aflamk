@@ -70,3 +70,9 @@ export enum NotificationType {
   WARNING_MESSAGE = 'WARNING_MESSAGE',
   CRITICAL_MESSAGE = 'CRITICAL_MESSAGE',
 }
+
+export enum EmailStatus {
+  PENDING = 'PENDING',
+  SENT = 'SENT',
+  FAILED = 'FAILED',
+}
