@@ -3,7 +3,8 @@ import { Users, OutboxMessage } from '@booking-ticket-system/Entities';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-const envPath = path.resolve(process.cwd(), 'libs/env/.env.development');
+const nodeEnv = process.env.NODE_ENV || 'development';
+const envPath = path.resolve(process.cwd(), `libs/env/.env.${nodeEnv}`);
 dotenv.config({ path: envPath });
 
 export const UsersDataSourceOptions: DataSourceOptions = {

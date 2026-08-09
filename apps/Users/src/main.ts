@@ -16,7 +16,7 @@ async function bootstrap() {
       package: 'user',
       protoPath: join(process.cwd(), 'libs/protos/Users.proto'),
       url:
-        process.env.NODE_ENV === 'development-docker'
+        process.env.NODE_ENV === 'docker-development'
           ? `0.0.0.0:50051`
           : process.env.NODE_ENV === 'development'
             ? 'localhost:50051'

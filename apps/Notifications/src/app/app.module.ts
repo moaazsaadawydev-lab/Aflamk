@@ -12,7 +12,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.ad
     NotificationsModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
+      envFilePath: `libs/env/.env.${process.env['NODE_ENV']}`,
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -24,8 +24,8 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.ad
         password: configService.get<string>('DATABASE_PASSWORD'),
         database: configService.get<string>('NOTIFICATIONS_DATABASE_NAME'),
         entities: [NotificationsEntity],
-        synchronize: false,
-        migrationsRun: false,
+        synchronize: process.env['NODE_ENV'] !== 'production',
+        migrationsRun: process.env['NODE_ENV'] === 'production',
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
       }),
     }),

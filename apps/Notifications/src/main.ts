@@ -12,10 +12,16 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const mqUrl =
+    process.env.MQ_URL ||
+    (process.env.NODE_ENV === 'docker-development'
+      ? 'amqp://rabbitmq:5672'
+      : 'amqp://localhost:5672');
+
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: [process.env.MQ_URL],
+      urls: [mqUrl],
       queue: 'notification_queue',
       queueOptions: { durable: true },
       noAck: false,

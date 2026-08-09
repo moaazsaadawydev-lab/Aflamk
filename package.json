@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "docker:logs": "docker-compose logs -f",
     "start:users:dev": "cross-env NODE_ENV=development nx serve users --watch --verbose",
     "start:booking:dev": "cross-env NODE_ENV=development nx serve booking --watch --verbose",
     "start:payments:dev": "cross-env NODE_ENV=development nx serve payments --watch --verbose",

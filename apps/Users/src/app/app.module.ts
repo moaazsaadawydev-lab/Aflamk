@@ -10,7 +10,7 @@ import { UsersModule } from './Users/Users.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
+      envFilePath: `libs/env/.env.${process.env['NODE_ENV']}`,
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -22,8 +22,8 @@ import { UsersModule } from './Users/Users.module';
         password: config.get<string>('DATABASE_PASSWORD'),
         database: config.get<string>('USERS_DATABASE_NAME'),
         entities: [Users, OutboxMessage],
-        synchronize: false,
-        migrationsRun: false,
+        synchronize: process.env['NODE_ENV'] !== 'production',
+        migrationsRun: process.env['NODE_ENV'] === 'production',
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
       }),
     }),

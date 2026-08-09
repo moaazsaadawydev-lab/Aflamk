@@ -9,7 +9,11 @@ config({ path: `libs/env/.env.${process.env.NODE_ENV}` });
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const mqUrl = process.env.MQ_URL || 'amqp://localhost:5672';
+  const mqUrl =
+    process.env.MQ_URL ||
+    (process.env.NODE_ENV === 'docker-development'
+      ? 'amqp://rabbitmq:5672'
+      : 'amqp://localhost:5672');
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,

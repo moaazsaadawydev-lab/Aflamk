@@ -25,7 +25,7 @@ import { StorageModule } from '@booking-ticket-system/Storage';
             package: 'user',
             protoPath: join(process.cwd(), 'libs/protos/Users.proto'),
             url:
-              process.env.NODE_ENV === 'development-docker'
+              process.env.NODE_ENV === 'docker-development'
                 ? config.get<string>('USERS_GRPC_DEV_DOC_URL')
                 : process.env.NODE_ENV === 'development'
                   ? config.get<string>('USERS_GRPC_DEV_URL')
@@ -45,11 +45,11 @@ import { StorageModule } from '@booking-ticket-system/Storage';
             package: 'notification',
             protoPath: join(process.cwd(), 'libs/protos/Notifications.proto'),
             url:
-              process.env.NODE_ENV === 'development-docker'
-                ? 'notifications-1:50052'
+              process.env.NODE_ENV === 'docker-development'
+                ? 'notifications-service:50052'
                 : process.env.NODE_ENV === 'development'
                   ? 'localhost:50052'
-                  : 'notifications-1:50052',
+                  : 'notifications-service:50052',
           },
         }),
       },

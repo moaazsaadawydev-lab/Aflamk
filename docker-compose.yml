@@ -1,0 +1,142 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: '624562'
+      POSTGRES_DB: Booking-Users
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - booking-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - booking-network
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/data
+    networks:
+      - booking-network
+
+  users-service:
+    build:
+      context: .
+      dockerfile: apps/Users/Dockerfile
+    container_name: users-service
+    env_file:
+      - libs/env/.env.docker-development
+    environment:
+      - NODE_ENV=docker-development
+    ports:
+      - '50051:50051'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - booking-network
+
+  notifications-service:
+    build:
+      context: .
+      dockerfile: apps/Notifications/Dockerfile
+    container_name: notifications-service
+    env_file:
+      - libs/env/.env.docker-development
+    environment:
+      - NODE_ENV=docker-development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - booking-network
+
+  media-service:
+    build:
+      context: .
+      dockerfile: apps/Media/Dockerfile
+    container_name: media-service
+    env_file:
+      - libs/env/.env.docker-development
+    environment:
+      - NODE_ENV=docker-development
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - booking-network
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    container_name: api-gateway
+    env_file:
+      - libs/env/.env.docker-development
+    environment:
+      - NODE_ENV=docker-development
+    ports:
+      - '3000:3000'
+    depends_on:
+      users-service:
+        condition: service_started
+      notifications-service:
+        condition: service_started
+      media-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - booking-network
+
+networks:
+  booking-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  minio_data:

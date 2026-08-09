@@ -10,7 +10,11 @@ export class MinioService implements OnModuleInit {
 
   constructor(private readonly config: ConfigService) {
     this.client = new Minio.Client({
-      endPoint: this.config.get<string>('MINIO_ENDPOINT') || 'localhost',
+      endPoint:
+        this.config.get<string>('MINIO_ENDPOINT') ||
+        (process.env['NODE_ENV'] === 'docker-development'
+          ? 'minio'
+          : 'localhost'),
       port: Number(this.config.get<string>('MINIO_PORT')) || 9000,
       useSSL: false,
       accessKey: this.config.get<string>('MINIO_ACCESS_KEY'),
