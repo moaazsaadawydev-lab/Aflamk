@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
-import { Users } from '@booking-ticket-system/Entities';
+import { Users, Session } from '@booking-ticket-system/Entities';
 import { OutboxModule } from '../outbox/outbox.module';
 import {
   RegistrationProvider,
@@ -19,7 +19,7 @@ import {
       isGlobal: true,
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
     }),
-    TypeOrmModule.forFeature([Users]),
+    TypeOrmModule.forFeature([Users, Session]),
     ClientsModule.registerAsync([
       {
         name: 'NOTIFICATION_SERVICE',

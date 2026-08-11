@@ -7,4 +7,6 @@ export type AccessPayloadType = {
 
 export type RefreshPayloadType = {
   id: string;
+  sessionId?: string;
 };
+
