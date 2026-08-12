@@ -25,7 +25,7 @@ export class NotificationEmailPublisherService implements OnModuleInit {
     });
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron('0/15 * * * * *')
   async publishPendingEmails() {
     const pendingNotifications = await this.notificationRepository.find({
       where: {

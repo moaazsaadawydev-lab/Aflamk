@@ -11,7 +11,7 @@ import {
   UserGender,
 } from '@booking-ticket-system/Utils';
 import * as bcrypt from 'bcryptjs';
-import { randomInt } from 'crypto';
+import { randomInt, randomUUID } from 'crypto';
 import { VERIFICATION_CODE_EXPIRY_MS } from '@booking-ticket-system/Constants';
 import { OutboxPublisherService } from '../../outbox/outbox-publisher.service';
 
@@ -25,7 +25,7 @@ export class RegistrationProvider {
     private readonly outboxService: OutboxPublisherService,
   ) {}
 
-  async register(registerDto: any): Promise<{ message: string }> {
+  async register(registerDto: any): Promise<any> {
     const normalizedEmail = registerDto.email.trim().toLowerCase();
 
     const userExists = await this.userRepository.findOne({
@@ -52,13 +52,22 @@ export class RegistrationProvider {
     await queryRunner.startTransaction();
 
     try {
+      const userId = randomUUID();
+      const tempKey =
+        registerDto.tempKey ||
+        registerDto.tempObjectKey ||
+        registerDto.temp_object_key;
+      const avatarKey = tempKey ? `avatars/${userId}.webp` : null;
+
       const user = queryRunner.manager.create(Users, {
+        id: userId,
         name: registerDto.name,
         email: normalizedEmail,
         password: passwordHash,
         age: registerDto.age,
         gender: registerDto.gender as UserGender,
         country: registerDto.country as Country,
+        avatarKey: avatarKey,
         verificationCode: verificationCodeHash,
         verificationCodeExpiresAt: new Date(
           Date.now() + VERIFICATION_CODE_EXPIRY_MS,
@@ -84,16 +93,16 @@ export class RegistrationProvider {
         }),
       );
 
-      const tempObjectKey =
-        registerDto.tempObjectKey || registerDto.temp_object_key;
-
-      if (tempObjectKey) {
+      if (tempKey) {
         await queryRunner.manager.save(
           queryRunner.manager.create(OutboxMessage, {
             eventType: 'process_profile_photo',
             payload: {
+              userId: user.id,
               entityId: user.id,
-              tempObjectKey,
+              tempKey,
+              tempObjectKey: tempKey,
+              finalKey: `avatars/${user.id}.webp`,
               profileType: ImageProfileType.AVATAR,
               crop: registerDto.cropFields || registerDto.crop,
             },
@@ -107,7 +116,19 @@ export class RegistrationProvider {
         Logger.error(`Immediate publish attempt failed: ${err.message}`);
       });
 
-      return { message: 'User created successfully' };
+      return {
+        id: user.id,
+        message: 'Account created successfully',
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatarKey: user.avatarKey,
+          gender: user.gender,
+          country: user.country,
+          age: user.age,
+        },
+      };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;

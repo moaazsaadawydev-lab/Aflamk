@@ -1,4 +1,9 @@
-import { BadRequestException, Controller, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Logger,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   Ctx,
   EventPattern,
@@ -12,13 +17,14 @@ import {
   LoginDto,
   RegisterDto,
   VerifyEmailDto,
+  UpdateUserProfileDto,
 } from '@booking-ticket-system/DTOs';
+import { SanitizeUserInterceptor } from '@booking-ticket-system/Common';
 import { UsersService } from './Users.Service';
 
 @Controller()
+@UseInterceptors(SanitizeUserInterceptor)
 export class UsersController {
-  private readonly logger = new Logger(UsersController.name);
-
   constructor(private readonly appService: UsersService) {}
 
   @GrpcMethod('UsersService', 'Register')
@@ -28,42 +34,19 @@ export class UsersController {
     return createdUser;
   }
 
-  @EventPattern('profile_photo_processed_success')
-  async handleProfilePhotoProcessed(
-    @Payload() data: any,
-    @Ctx() context: RmqContext,
-  ) {
-    const channel = context.getChannelRef();
-    const originalMsg = context.getMessage();
-
-    try {
-      if (data.profileType === 'avatar') {
-        await this.appService.updateAvatar(data.entityId, data.mediaUrl);
-      }
-
-      channel.ack(originalMsg);
-    } catch (error) {
-      this.logger.error(
-        `Failed to update avatar for user ${data.entityId}: ${error.message}`,
-      );
-
-      if (error instanceof BadRequestException) {
-        channel.ack(originalMsg); // نقفلها كخسارة معروفة، مش نسيبها تلف للأبد
-        return;
-      }
-
-      const isRedelivered = originalMsg.fields.redelivered;
-      channel.nack(originalMsg, false, !isRedelivered);
-    }
-  }
-
   @GrpcMethod('UsersService', 'VerifyEmail')
   verifyEmail(verifyEmailDto: VerifyEmailDto) {
     return this.appService.verifyEmail(verifyEmailDto);
   }
 
   @GrpcMethod('UsersService', 'Login')
-  async login(loginDto: LoginDto) {
+  async login(@Payload() data: any) {
+    const loginDto: LoginDto = {
+      email: data.email,
+      password: data.password,
+      userAgent: data.userAgent || data.user_agent,
+      ipAddress: data.ipAddress || data.ip_address,
+    };
     const result = await this.appService.login(loginDto);
 
     return result;
@@ -72,6 +55,33 @@ export class UsersController {
   @GrpcMethod('UsersService', 'CurrentUser')
   getProfile(@Payload() data: { id: string }) {
     return this.appService.getProfile(data.id);
+  }
+
+  @GrpcMethod('UsersService', 'UpdateProfile')
+  async updateProfile(
+    @Payload()
+    data: {
+      userId?: string;
+      user_id?: string;
+      id?: string;
+      name?: string;
+      country?: any;
+      age?: number;
+    },
+  ) {
+    const userId = data.userId || data.user_id || data.id;
+
+    if (!userId) {
+      throw new RpcException('User ID is required for profile update');
+    }
+
+    const updateDto: UpdateUserProfileDto = {
+      name: data.name,
+      country: data.country,
+      age: data.age ? Number(data.age) : undefined,
+    };
+
+    return await this.appService.updateProfile(userId, updateDto);
   }
 
   @GrpcMethod('UsersService', 'RefreshToken')

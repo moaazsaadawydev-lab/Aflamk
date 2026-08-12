@@ -2,12 +2,13 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
+  Headers,
   Inject,
   Logger,
   Post,
   HttpCode,
   HttpStatus,
-  UploadedFiles,
   UseInterceptors,
   BadRequestException,
   UploadedFile,
@@ -22,21 +23,24 @@ import {
   NotificationDto,
   RegisterDto,
   VerifyEmailDto,
+  UpdateUserProfileDto,
 } from '@booking-ticket-system/DTOs';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage, memoryStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname } from 'path';
-import * as fs from 'fs-extra';
 import { lastValueFrom } from 'rxjs';
 import { Users } from '@booking-ticket-system/Entities';
 import { Request, Response } from 'express';
 import { JwtAuthGuard } from '@booking-ticket-system/Guards';
 import { CurrentUser } from '@booking-ticket-system/Decorators';
+import { TransformResponseInterceptor } from '@booking-ticket-system/Common';
 import { MinioService } from '@booking-ticket-system/Storage';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
+
 
 @Controller()
+@UseInterceptors(TransformResponseInterceptor)
 export class ApiGatewayController {
   private UsersService: any;
 
@@ -77,7 +81,8 @@ export class ApiGatewayController {
 
     if (file) {
       try {
-        objectKey = `temp/${randomBytes(16).toString('hex')}${extname(file.originalname)}`;
+        objectKey = `temp/${randomUUID()}.raw`;
+
         await this.minioService.uploadBuffer(
           file.buffer,
           objectKey,
@@ -95,7 +100,14 @@ export class ApiGatewayController {
         temp_object_key: objectKey,
       };
 
-      await lastValueFrom(this.UsersService.Register(registerPayload));
+      const result: any = await lastValueFrom(
+        this.UsersService.Register(registerPayload),
+      );
+
+      return {
+        message: result?.message || 'Account created successfully',
+        user: result?.user || result,
+      };
     } catch (error) {
       if (objectKey) {
         await this.minioService.deleteObject(objectKey).catch(() => null);
@@ -105,8 +117,6 @@ export class ApiGatewayController {
         error.message || 'Failed to create account',
       );
     }
-
-    return { message: 'Account created successfully' };
   }
 
   @Post('auth/users/verify')
@@ -119,9 +129,27 @@ export class ApiGatewayController {
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() body: LoginDto,
+    @Headers('user-agent') userAgent: string,
+    @Req() req: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const Tokens: any = await lastValueFrom(this.UsersService.Login(body));
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const rawIp = Array.isArray(forwardedFor)
+      ? forwardedFor[0]
+      : forwardedFor?.split(',')[0] || req.socket?.remoteAddress || req.ip;
+    const ipAddress = rawIp ? rawIp.trim() : undefined;
+
+    const loginPayload = {
+      ...body,
+      userAgent: userAgent || body.userAgent,
+      user_agent: userAgent || body.userAgent,
+      ipAddress: ipAddress || body.ipAddress,
+      ip_address: ipAddress || body.ipAddress,
+    };
+
+    const Tokens: any = await lastValueFrom(
+      this.UsersService.Login(loginPayload),
+    );
 
     const accessToken = Tokens.accessToken || Tokens.access_token;
     const refreshToken = Tokens.refreshToken || Tokens.refresh_token;
@@ -147,6 +175,22 @@ export class ApiGatewayController {
       this.UsersService.CurrentUser({ id: user?.id }),
     );
     return userProfile;
+  }
+
+  @Patch('auth/users/profile')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async updateProfile(
+    @CurrentUser() user: Users,
+    @Body() body: UpdateUserProfileDto,
+  ) {
+    return await lastValueFrom(
+      this.UsersService.UpdateProfile({
+        user_id: user?.id,
+        userId: user?.id,
+        ...body,
+      }),
+    );
   }
 
   @Post('send-notification')

@@ -13,36 +13,40 @@ export class MediaService {
   ) {}
 
   async processAndSaveProfilePhoto(data: any) {
-    const filename = `avatar/${data.profileType}-${data.entityId}.webp`;
-    const alreadyProcessed = await this.minioService.objectExists(filename);
+    const tempKey = data.tempKey || data.tempObjectKey;
+    const userId = data.userId || data.entityId;
+    const finalKey = data.finalKey || `avatars/${userId}.webp`;
+
+    if (!tempKey) {
+      this.logger.warn(`No tempKey provided for media processing.`);
+      return;
+    }
+
+    const alreadyProcessed = await this.minioService.objectExists(finalKey);
 
     if (!alreadyProcessed) {
-      const rawBuffer = await this.minioService.getBuffer(data.tempObjectKey);
+      const rawBuffer = await this.minioService.getBuffer(tempKey);
 
       const { buffer } = await this.imageProcessor.processImageByProfile(
         rawBuffer,
-        data.profileType,
+        data.profileType || 'avatar',
+        data.crop,
       );
 
-      await this.minioService.uploadBuffer(buffer, filename, 'image/webp');
-      this.logger.log(`Processed and uploaded: ${filename}`);
+      await this.minioService.uploadBuffer(buffer, finalKey, 'image/webp');
+      this.logger.log(`Processed and uploaded: ${finalKey}`);
     } else {
-      this.logger.log(`Skipping reprocessing, already exists: ${filename}`);
+      this.logger.log(`Skipping reprocessing, already exists: ${finalKey}`);
     }
 
-    await this.minioService.deleteObject(data.tempObjectKey).catch(() => {
-      this.logger.warn(`Temp object already removed: ${data.tempObjectKey}`);
+    await this.minioService.deleteObject(tempKey).catch(() => {
+      this.logger.warn(`Temp object already removed: ${tempKey}`);
     });
 
-    const mediaUrl = await this.minioService.getPresignedUrl(
-      filename,
-      3600 * 24 * 7,
-    );
-
     return {
-      entityId: data.entityId,
-      profileType: data.profileType,
-      mediaUrl,
+      userId,
+      finalKey,
     };
   }
 }
+

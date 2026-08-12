@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { LoginDto, VerifyEmailDto } from '@booking-ticket-system/DTOs';
+import { LoginDto, VerifyEmailDto, UpdateUserProfileDto } from '@booking-ticket-system/DTOs';
 import {
   RegistrationProvider,
   AuthProvider,
   ProfileProvider,
+  UpdateUserProvider,
 } from './Providers';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class UsersService {
     private readonly registrationProvider: RegistrationProvider,
     private readonly authProvider: AuthProvider,
     private readonly profileProvider: ProfileProvider,
+    private readonly updateUserProvider: UpdateUserProvider,
   ) {}
 
   register(registerDto: any) {
@@ -34,7 +36,12 @@ export class UsersService {
     return this.profileProvider.getProfile(userId);
   }
 
+  updateProfile(userId: string, updateDto: UpdateUserProfileDto) {
+    return this.updateUserProvider.execute(userId, updateDto);
+  }
+
   refresh(refreshToken: string) {
     return this.authProvider.refresh(refreshToken);
   }
 }
+

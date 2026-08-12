@@ -24,14 +24,10 @@ export class MediaController {
     const originalMsg = context.getMessage();
 
     try {
-      const result = await this.MediaService.processAndSaveProfilePhoto(data);
-
-      await firstValueFrom(
-        this.rmqClient.emit('profile_photo_processed_success', result),
-      );
-
+      await this.MediaService.processAndSaveProfilePhoto(data);
       channel.ack(originalMsg);
     } catch (error) {
+
       this.logger.error(`Error processing media: ${error.message}`);
 
       const isRedelivered = originalMsg.fields.redelivered;

@@ -7,10 +7,12 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
 import { Users, Session } from '@booking-ticket-system/Entities';
 import { OutboxModule } from '../outbox/outbox.module';
+import { SanitizeUserInterceptor } from '@booking-ticket-system/Common';
 import {
   RegistrationProvider,
   AuthProvider,
   ProfileProvider,
+  UpdateUserProvider,
 } from './Providers';
 
 @Module({
@@ -65,6 +67,10 @@ import {
     RegistrationProvider,
     AuthProvider,
     ProfileProvider,
+    UpdateUserProvider,
+    SanitizeUserInterceptor,
   ],
+  exports: [UpdateUserProvider, SanitizeUserInterceptor],
 })
 export class UsersModule {}
+
