@@ -1,10 +1,9 @@
 import {
   IsString,
   IsNotEmpty,
-  IsEmail,
   IsNumber,
   IsOptional,
-  ValidateIf,
+  IsEmail,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -33,27 +32,28 @@ export class RegisterDto {
   @IsNotEmpty()
   gender!: string;
 
-  @ValidateIf((o) => o.hasFile === true)
-  @Transform(({ value }) => (value !== undefined ? Number(value) : value))
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined && value !== null && value !== '' ? Number(value) : undefined))
   @IsNumber({}, { message: 'cropX must be a number' })
-  @IsOptional()
-  x?: number;
+  cropX?: number;
 
-  @ValidateIf((o) => o.hasFile === true)
-  @Transform(({ value }) => (value !== undefined ? Number(value) : value))
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined && value !== null && value !== '' ? Number(value) : undefined))
   @IsNumber({}, { message: 'cropY must be a number' })
-  @IsOptional()
-  y?: number;
+  cropY?: number;
 
-  @ValidateIf((o) => o.hasFile === true)
-  @Transform(({ value }) => (value !== undefined ? Number(value) : value))
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined && value !== null && value !== '' ? Number(value) : undefined))
   @IsNumber({}, { message: 'cropWidth must be a number' })
-  @IsOptional()
-  width?: number;
+  cropWidth?: number;
 
-  @ValidateIf((o) => o.hasFile === true)
-  @Transform(({ value }) => (value !== undefined ? Number(value) : value))
-  @IsNumber({}, { message: 'cropHeight must be a number' })
   @IsOptional()
-  height?: number;
+  @Transform(({ value }) => (value !== undefined && value !== null && value !== '' ? Number(value) : undefined))
+  @IsNumber({}, { message: 'cropHeight must be a number' })
+  cropHeight?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined && value !== null && value !== '' ? Number(value) : undefined))
+  @IsNumber({}, { message: 'cropZoom must be a number' })
+  cropZoom?: number;
 }

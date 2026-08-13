@@ -35,4 +35,24 @@ export class MediaController {
       channel.nack(originalMsg, false, !isRedelivered);
     }
   }
+
+  @EventPattern('USER_PROFILE_PHOTO_UPDATED')
+  async handleUserProfilePhotoUpdated(
+    @Payload() data: any,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    try {
+      await this.MediaService.processUserProfilePhotoUpdate(data);
+      channel.ack(originalMsg);
+    } catch (error) {
+      this.logger.error(
+        `Error processing USER_PROFILE_PHOTO_UPDATED: ${error.message}`,
+        error.stack,
+      );
+      channel.nack(originalMsg, false, true);
+    }
+  }
 }

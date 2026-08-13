@@ -55,7 +55,8 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
     for (const message of pendingMessages) {
       try {
         const client =
-          message.eventType === 'process_profile_photo'
+          message.eventType === 'process_profile_photo' ||
+          message.eventType === 'USER_PROFILE_PHOTO_UPDATED'
             ? this.mediaRmqClient
             : this.notificationRmqClient;
 
@@ -64,13 +65,7 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
             eventId: message.id,
             ...message.payload,
           }),
-        )
-          .then((res) => {
-            Logger.log('sent successfully', res);
-          })
-          .catch((error) => {
-            Logger.log(error);
-          });
+        );
 
         message.status = OutboxStatus.PUBLISHED;
         message.publishedAt = new Date();

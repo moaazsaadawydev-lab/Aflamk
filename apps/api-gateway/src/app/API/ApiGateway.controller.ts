@@ -11,6 +11,7 @@ import {
   HttpStatus,
   UseInterceptors,
   BadRequestException,
+  BadGatewayException,
   UploadedFile,
   Res,
   UseGuards,
@@ -38,16 +39,14 @@ import { TransformResponseInterceptor } from '@booking-ticket-system/Common';
 import { MinioService } from '@booking-ticket-system/Storage';
 import { randomBytes, randomUUID } from 'crypto';
 
-
 @Controller()
 @UseInterceptors(TransformResponseInterceptor)
 export class ApiGatewayController {
   private UsersService: any;
 
   constructor(
-    private readonly apiService: ApiGatewayService,
-    @Inject('USER_SERVICE')
-    private readonly client: ClientGrpc,
+    private readonly apiGatewayService: ApiGatewayService,
+    @Inject('USER_SERVICE') private client: ClientGrpc,
     @Inject('NOTIFICATION_SERVICE')
     private readonly notificationRmqClient: ClientProxy,
     private readonly minioService: MinioService,
@@ -69,8 +68,14 @@ export class ApiGatewayController {
     @Body() body: RegisterDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const cropFields = [body.x, body.y, body.width, body.height];
-    const isCropMissing = cropFields.some((v) => v === undefined || v === null);
+    const cropFields = [
+      body.cropX,
+      body.cropY,
+      body.cropWidth,
+      body.cropHeight,
+      body.cropZoom,
+    ];
+    const isCropMissing = cropFields.every((v) => v === undefined || v === null);
 
     if (file && isCropMissing) {
       Logger.log('Crop parameters are required');
@@ -99,6 +104,8 @@ export class ApiGatewayController {
         ...body,
         temp_object_key: objectKey,
       };
+
+      Logger.log('registerPayload', registerPayload);
 
       const result: any = await lastValueFrom(
         this.UsersService.Register(registerPayload),
@@ -131,43 +138,23 @@ export class ApiGatewayController {
     @Body() body: LoginDto,
     @Headers('user-agent') userAgent: string,
     @Req() req: Request,
-    @Res({ passthrough: true }) response: Response,
   ) {
-    const forwardedFor = req.headers['x-forwarded-for'];
-    const rawIp = Array.isArray(forwardedFor)
-      ? forwardedFor[0]
-      : forwardedFor?.split(',')[0] || req.socket?.remoteAddress || req.ip;
-    const ipAddress = rawIp ? rawIp.trim() : undefined;
+    const ip =
+      (req.headers['x-forwarded-for'] as string) ||
+      req.socket.remoteAddress ||
+      '';
 
-    const loginPayload = {
-      ...body,
-      userAgent: userAgent || body.userAgent,
-      user_agent: userAgent || body.userAgent,
-      ipAddress: ipAddress || body.ipAddress,
-      ip_address: ipAddress || body.ipAddress,
-    };
-
-    const Tokens: any = await lastValueFrom(
-      this.UsersService.Login(loginPayload),
+    return await lastValueFrom(
+      this.UsersService.Login({
+        email: body.email,
+        password: body.password,
+        user_agent: userAgent,
+        ip_address: ip,
+      }),
     );
-
-    const accessToken = Tokens.accessToken || Tokens.access_token;
-    const refreshToken = Tokens.refreshToken || Tokens.refresh_token;
-
-    response.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/api/v1/auth/users/refresh',
-    });
-
-    return {
-      accessToken,
-    };
   }
 
-  @Get('auth/users/profile')
+  @Get('auth/me')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async getProfile(@CurrentUser() user: Users) {
@@ -177,20 +164,63 @@ export class ApiGatewayController {
     return userProfile;
   }
 
-  @Patch('auth/users/profile')
+  @Patch('auth/users/profile/update')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
   async updateProfile(
     @CurrentUser() user: Users,
     @Body() body: UpdateUserProfileDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    return await lastValueFrom(
-      this.UsersService.UpdateProfile({
-        user_id: user?.id,
-        userId: user?.id,
-        ...body,
-      }),
-    );
+    let tempKey: string | null = null;
+
+    if (file) {
+      try {
+        tempKey = `temp/${randomUUID()}.raw`;
+
+        await this.minioService.uploadBuffer(
+          file.buffer,
+          tempKey,
+          file.mimetype,
+        );
+      } catch (error) {
+        Logger.error(
+          `Failed to upload temp profile file to MinIO: ${error.message}`,
+        );
+        throw new BadGatewayException(
+          'Failed to process uploaded image storage',
+        );
+      }
+    }
+
+    try {
+      return await lastValueFrom(
+        this.UsersService.UpdateProfile({
+          user_id: user?.id,
+          userId: user?.id,
+          temp_key: tempKey,
+          tempKey: tempKey,
+          ...body,
+          age:
+            body.age !== undefined &&
+            body.age !== null &&
+            (body.age as any) !== ''
+              ? Number(body.age)
+              : undefined,
+        }),
+      );
+    } catch (error) {
+      if (tempKey) {
+        await this.minioService.deleteObject(tempKey).catch(() => null);
+      }
+      throw error;
+    }
   }
 
   @Post('send-notification')

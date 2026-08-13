@@ -4,4 +4,5 @@ export * from './lib/process-media.dto';
 export * from './lib/Login.dto';
 export * from './lib/Notifications.dto';
 export * from './lib/UpdateUserProfile.dto';
+export * from './lib/CropFields.dto';
 

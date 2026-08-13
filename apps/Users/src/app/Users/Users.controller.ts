@@ -67,8 +67,21 @@ export class UsersController {
       name?: string;
       country?: any;
       age?: number;
+      tempKey?: string;
+      temp_key?: string;
+      cropX?: number;
+      crop_x?: number;
+      cropY?: number;
+      crop_y?: number;
+      cropWidth?: number;
+      crop_width?: number;
+      cropHeight?: number;
+      crop_height?: number;
+      cropZoom?: number;
+      crop_zoom?: number;
     },
   ) {
+    Logger.log('data', data);
     const userId = data.userId || data.user_id || data.id;
 
     if (!userId) {
@@ -79,6 +92,12 @@ export class UsersController {
       name: data.name,
       country: data.country,
       age: data.age ? Number(data.age) : undefined,
+      tempKey: data.tempKey || data.temp_key,
+      cropX: data.cropX ?? data.crop_x,
+      cropY: data.cropY ?? data.crop_y,
+      cropWidth: data.cropWidth ?? data.crop_width,
+      cropHeight: data.cropHeight ?? data.crop_height,
+      cropZoom: data.cropZoom ?? data.crop_zoom,
     };
 
     return await this.appService.updateProfile(userId, updateDto);

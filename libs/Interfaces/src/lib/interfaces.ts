@@ -18,8 +18,14 @@ export interface ProcessedImageResult {
 }
 
 export interface CropOptions {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  zoom?: number;
+  cropX?: number;
+  cropY?: number;
+  cropWidth?: number;
+  cropHeight?: number;
+  cropZoom?: number;
 }

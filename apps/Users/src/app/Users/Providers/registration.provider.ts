@@ -33,7 +33,7 @@ export class RegistrationProvider {
     });
 
     if (userExists) {
-      throw new RpcException('This Email is already used');
+      throw new RpcException('Invalid Email or Password');
     }
 
     if (registerDto.age < 18) {
@@ -53,10 +53,8 @@ export class RegistrationProvider {
 
     try {
       const userId = randomUUID();
-      const tempKey =
-        registerDto.tempKey ||
-        registerDto.tempObjectKey ||
-        registerDto.temp_object_key;
+      Logger.log('dto', registerDto);
+      const tempKey = registerDto.tempObjectKey;
       const avatarKey = tempKey ? `avatars/${userId}.webp` : null;
 
       const user = queryRunner.manager.create(Users, {
@@ -99,12 +97,14 @@ export class RegistrationProvider {
             eventType: 'process_profile_photo',
             payload: {
               userId: user.id,
-              entityId: user.id,
-              tempKey,
               tempObjectKey: tempKey,
               finalKey: `avatars/${user.id}.webp`,
               profileType: ImageProfileType.AVATAR,
-              crop: registerDto.cropFields || registerDto.crop,
+              cropX: registerDto.cropX ?? (registerDto as any).crop_x,
+              cropY: registerDto.cropY ?? (registerDto as any).crop_y,
+              cropWidth: registerDto.cropWidth ?? (registerDto as any).crop_width,
+              cropHeight: registerDto.cropHeight ?? (registerDto as any).crop_height,
+              cropZoom: registerDto.cropZoom ?? (registerDto as any).crop_zoom,
             },
           }),
         );

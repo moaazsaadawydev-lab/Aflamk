@@ -1,40 +1,96 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Users } from '@booking-ticket-system/Entities';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { OutboxMessage, Users } from '@booking-ticket-system/Entities';
 import { UpdateUserProfileDto } from '@booking-ticket-system/DTOs';
+import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
 
 @Injectable()
 export class UpdateUserProvider {
   constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
     @InjectRepository(Users)
     private readonly userRepository: Repository<Users>,
+    private readonly outboxService: OutboxPublisherService,
   ) {}
 
   async execute(
     userId: string,
     updateDto: UpdateUserProfileDto,
   ): Promise<Users> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    try {
+      const user = await queryRunner.manager.findOne(Users, {
+        where: { id: userId },
+      });
 
-    const { name, country, age } = updateDto;
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
 
-    if (name !== undefined) {
-      user.name = name;
-    }
-    if (country !== undefined) {
-      user.country = country;
-    }
-    if (age !== undefined) {
-      user.age = age;
-    }
+      const {
+        name,
+        country,
+        age,
+        tempKey,
+        cropX,
+        cropY,
+        cropWidth,
+        cropHeight,
+        cropZoom,
+      } = updateDto;
 
-    return await this.userRepository.save(user);
+      if (name !== undefined) {
+        user.name = name;
+      }
+      if (country !== undefined) {
+        user.country = country;
+      }
+      if (age !== undefined) {
+        user.age = age;
+      }
+
+      if (tempKey) {
+        const oldAvatarKey = user.avatarKey;
+        const newAvatarKey = `avatars/${userId}-${Date.now()}.webp`;
+        user.avatarKey = newAvatarKey;
+
+        await queryRunner.manager.save(
+          queryRunner.manager.create(OutboxMessage, {
+            eventType: 'USER_PROFILE_PHOTO_UPDATED',
+            payload: {
+              userId,
+              oldAvatarKey,
+              tempKey,
+              finalKey: newAvatarKey,
+              cropX,
+              cropY,
+              cropWidth,
+              cropHeight,
+              cropZoom,
+            },
+          }),
+        );
+      }
+
+      const savedUser = await queryRunner.manager.save(user);
+
+      await queryRunner.commitTransaction();
+
+      this.outboxService.publishPendingMessages().catch((err) => {
+        Logger.error(`Immediate publish attempt failed: ${err.message}`);
+      });
+
+      return savedUser;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

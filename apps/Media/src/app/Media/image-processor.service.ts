@@ -19,14 +19,38 @@ export class ImageProcessorService {
         IMAGE_PROFILES[profileType] || IMAGE_PROFILES[ImageProfileType.AVATAR];
 
       let pipeline = sharp(fileBuffer);
+      const metadata = await pipeline.metadata();
 
-      if (crop && crop.width && crop.height) {
-        pipeline = pipeline.extract({
-          left: Math.round(crop.x),
-          top: Math.round(crop.y),
-          width: Math.round(crop.width),
-          height: Math.round(crop.height),
-        });
+      const imgWidth = metadata.width || 0;
+      const imgHeight = metadata.height || 0;
+
+      const cropX = crop?.cropX ?? crop?.x;
+      const cropY = crop?.cropY ?? crop?.y;
+      const cropWidth = crop?.cropWidth ?? crop?.width;
+      const cropHeight = crop?.cropHeight ?? crop?.height;
+
+      if (
+        typeof cropX === 'number' &&
+        typeof cropY === 'number' &&
+        typeof cropWidth === 'number' &&
+        typeof cropHeight === 'number' &&
+        cropWidth > 0 &&
+        cropHeight > 0 &&
+        imgWidth > 0 &&
+        imgHeight > 0
+      ) {
+        const left = Math.max(0, Math.min(Math.round(cropX), imgWidth - 1));
+        const top = Math.max(0, Math.min(Math.round(cropY), imgHeight - 1));
+        const width = Math.max(
+          1,
+          Math.min(Math.round(cropWidth), imgWidth - left),
+        );
+        const height = Math.max(
+          1,
+          Math.min(Math.round(cropHeight), imgHeight - top),
+        );
+
+        pipeline = pipeline.extract({ left, top, width, height });
       }
 
       const targetWidth = profile.width;

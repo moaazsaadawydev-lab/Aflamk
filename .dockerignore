@@ -8,3 +8,4 @@ dist
 .env.*
 *.env
 npm-debug.log
+crop.html
