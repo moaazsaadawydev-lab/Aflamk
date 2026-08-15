@@ -13,6 +13,7 @@ import {
   RmqContext,
   RpcException,
 } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
 import {
   LoginDto,
   RegisterDto,
@@ -85,7 +86,10 @@ export class UsersController {
     const userId = data.userId || data.user_id || data.id;
 
     if (!userId) {
-      throw new RpcException('User ID is required for profile update');
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'User ID is required for profile update',
+      });
     }
 
     const updateDto: UpdateUserProfileDto = {
@@ -108,7 +112,10 @@ export class UsersController {
     const token = data?.refresh_token || data?.refreshToken;
 
     if (!token) {
-      throw new RpcException('Refresh token missing from request payload');
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'Refresh token missing from request payload',
+      });
     }
 
     return this.appService.refresh(token);
@@ -124,10 +131,16 @@ export class UsersController {
     const ipAddress = data.ipAddress || data.ip_address;
 
     if (!userId) {
-      throw new RpcException('User ID is required for password change');
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'User ID is required for password change',
+      });
     }
     if (!oldPassword || !newPassword) {
-      throw new RpcException('Old password and new password are required');
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'Old password and new password are required',
+      });
     }
 
     return await this.appService.changePassword({
@@ -140,4 +153,3 @@ export class UsersController {
     });
   }
 }
-

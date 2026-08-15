@@ -1,13 +1,10 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { LoginDto } from '@booking-ticket-system/DTOs';
 import { Users, Session } from '@booking-ticket-system/Entities';
 import { MoreThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RpcException } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -69,13 +66,17 @@ export class AuthProvider {
     });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new RpcException({
+        code: status.UNAUTHENTICATED,
+        message: 'Invalid email or password',
+      });
     }
 
     if (!user.isVerified) {
-      throw new UnauthorizedException(
-        'Please verify your email before logging in',
-      );
+      throw new RpcException({
+        code: status.PERMISSION_DENIED,
+        message: 'Please verify your email before logging in',
+      });
     }
 
     const sessionId = randomUUID();
@@ -144,11 +145,17 @@ export class AuthProvider {
           secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
         });
     } catch (error) {
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new RpcException({
+        code: status.UNAUTHENTICATED,
+        message: 'Invalid or expired refresh token',
+      });
     }
 
     if (!refreshTokenPayload.sessionId) {
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new RpcException({
+        code: status.UNAUTHENTICATED,
+        message: 'Invalid or expired refresh token',
+      });
     }
 
     const session = await this.sessionRepository.findOne({
@@ -161,7 +168,10 @@ export class AuthProvider {
     });
 
     if (!session || !session.user) {
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new RpcException({
+        code: status.UNAUTHENTICATED,
+        message: 'Invalid or expired refresh token',
+      });
     }
 
     const isMatch = await bcrypt.compare(
@@ -170,8 +180,12 @@ export class AuthProvider {
     );
 
     if (!isMatch) {
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new RpcException({
+        code: status.UNAUTHENTICATED,
+        message: 'Invalid or expired refresh token',
+      });
     }
+
 
     const user = session.user;
 

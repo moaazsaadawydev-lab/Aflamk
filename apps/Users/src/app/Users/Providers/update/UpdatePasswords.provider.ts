@@ -1,13 +1,10 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Users, Session, OutboxMessage } from '@booking-ticket-system/Entities';
 import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
+import { RpcException } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
 import * as bcrypt from 'bcryptjs';
 
 export interface ChangePasswordPayload {
@@ -44,7 +41,10 @@ export class UpdatePasswordsProvider {
       });
 
       if (!user) {
-        throw new NotFoundException('User not found');
+        throw new RpcException({
+          code: status.NOT_FOUND,
+          message: 'User not found',
+        });
       }
 
       const isCurrentPasswordCorrect = await bcrypt.compare(
@@ -53,15 +53,20 @@ export class UpdatePasswordsProvider {
       );
 
       if (!isCurrentPasswordCorrect) {
-        throw new BadRequestException('Current password is incorrect');
+        throw new RpcException({
+          code: status.UNAUTHENTICATED,
+          message: 'Current password is incorrect',
+        });
       }
 
       const isSamePassword = await bcrypt.compare(newPassword, user.password);
       if (isSamePassword) {
-        throw new BadRequestException(
-          'New password cannot be the same as current password',
-        );
+        throw new RpcException({
+          code: status.INVALID_ARGUMENT,
+          message: 'New password cannot be the same as current password',
+        });
       }
+
 
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);
       user.password = hashedNewPassword;

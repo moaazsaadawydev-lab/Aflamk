@@ -1,4 +1,6 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
 import sharp from 'sharp';
 import { IMAGE_PROFILES } from './config/image-profiles.config';
 import {
@@ -70,8 +72,8 @@ export class ImageProcessorService {
         const circleShape = Buffer.from(
           `<svg width="${targetWidth}" height="${targetHeight}">
             <circle cx="${targetWidth / 2}" cy="${
-              targetHeight / 2
-            }" r="${targetWidth / 2}" fill="#fff"/>
+            targetHeight / 2
+          }" r="${targetWidth / 2}" fill="#fff"/>
           </svg>`,
         );
 
@@ -91,9 +93,10 @@ export class ImageProcessorService {
         config: profile,
       };
     } catch (error) {
-      throw new BadRequestException(
-        'Failed to process image. Invalid image file.',
-      );
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'Failed to process image. Invalid image file.',
+      });
     }
   }
 }

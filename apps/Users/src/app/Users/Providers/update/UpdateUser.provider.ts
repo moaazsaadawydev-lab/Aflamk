@@ -1,9 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { OutboxMessage, Users } from '@booking-ticket-system/Entities';
 import { UpdateUserProfileDto } from '@booking-ticket-system/DTOs';
 import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
+import { RpcException } from '@nestjs/microservices';
+import { status } from '@grpc/grpc-js';
 
 @Injectable()
 export class UpdateUserProvider {
@@ -29,8 +31,12 @@ export class UpdateUserProvider {
       });
 
       if (!user) {
-        throw new NotFoundException('User not found');
+        throw new RpcException({
+          code: status.NOT_FOUND,
+          message: 'User not found',
+        });
       }
+
 
       const {
         name,
