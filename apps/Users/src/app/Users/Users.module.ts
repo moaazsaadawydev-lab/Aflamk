@@ -13,6 +13,7 @@ import {
   AuthProvider,
   ProfileProvider,
   UpdateUserProvider,
+  UpdatePasswordsProvider,
 } from './Providers';
 
 @Module({
@@ -68,9 +69,11 @@ import {
     AuthProvider,
     ProfileProvider,
     UpdateUserProvider,
+    UpdatePasswordsProvider,
     SanitizeUserInterceptor,
   ],
-  exports: [UpdateUserProvider, SanitizeUserInterceptor],
+  exports: [UpdateUserProvider, UpdatePasswordsProvider, SanitizeUserInterceptor],
 })
+
 export class UsersModule {}
 

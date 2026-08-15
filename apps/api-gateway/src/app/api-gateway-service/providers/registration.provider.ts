@@ -1,0 +1,85 @@
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
+import { ClientGrpc } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
+import { randomUUID } from 'crypto';
+import { RegisterDto } from '@booking-ticket-system/DTOs';
+import { MinioService } from '@booking-ticket-system/Storage';
+
+@Injectable()
+export class RegistrationProvider implements OnModuleInit {
+  private usersService: any;
+
+  constructor(
+    @Inject('USER_SERVICE') private readonly client: ClientGrpc,
+    private readonly minioService: MinioService,
+  ) {}
+
+  onModuleInit() {
+    this.usersService = this.client.getService('UsersService');
+  }
+
+  async register(body: RegisterDto, file?: Express.Multer.File) {
+    const cropFields = [
+      body.cropX,
+      body.cropY,
+      body.cropWidth,
+      body.cropHeight,
+      body.cropZoom,
+    ];
+    const isCropMissing = cropFields.every((v) => v === undefined || v === null);
+
+    if (file && isCropMissing) {
+      Logger.log('Crop parameters are required');
+      throw new BadRequestException('Crop parameters are required');
+    }
+
+    let objectKey: string | null = null;
+
+    if (file) {
+      try {
+        objectKey = `temp/${randomUUID()}.raw`;
+
+        await this.minioService.uploadBuffer(
+          file.buffer,
+          objectKey,
+          file.mimetype,
+        );
+      } catch (error: any) {
+        Logger.error(`Failed to upload temp file to MinIO: ${error.message}`);
+        throw new BadRequestException('Failed to process uploaded image');
+      }
+    }
+
+    try {
+      const registerPayload = {
+        ...body,
+        temp_object_key: objectKey,
+      };
+
+      Logger.log('registerPayload', registerPayload);
+
+      const result: any = await lastValueFrom(
+        this.usersService.Register(registerPayload),
+      );
+
+      return {
+        message: result?.message || 'Account created successfully',
+        user: result?.user || result,
+      };
+    } catch (error: any) {
+      if (objectKey) {
+        await this.minioService.deleteObject(objectKey).catch(() => null);
+      }
+      Logger.log('Failed to create account');
+      throw new BadRequestException(
+        error.message || 'Failed to create account',
+      );
+    }
+  }
+}

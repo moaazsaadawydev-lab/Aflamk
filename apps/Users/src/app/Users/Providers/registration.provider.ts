@@ -14,6 +14,7 @@ import * as bcrypt from 'bcryptjs';
 import { randomInt, randomUUID } from 'crypto';
 import { VERIFICATION_CODE_EXPIRY_MS } from '@booking-ticket-system/Constants';
 import { OutboxPublisherService } from '../../outbox/outbox-publisher.service';
+import { status } from '@grpc/grpc-js';
 
 @Injectable()
 export class RegistrationProvider {
@@ -33,11 +34,17 @@ export class RegistrationProvider {
     });
 
     if (userExists) {
-      throw new RpcException('Invalid Email or Password');
+      throw new RpcException({
+        code: status.ALREADY_EXISTS,
+        message: 'Invalid email or password',
+      });
     }
 
     if (registerDto.age < 18) {
-      throw new RpcException('You must be at least 18 years old');
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'You must be at least 18 years old',
+      });
     }
 
     const code = randomInt(100000, 1000000).toString();
@@ -102,8 +109,10 @@ export class RegistrationProvider {
               profileType: ImageProfileType.AVATAR,
               cropX: registerDto.cropX ?? (registerDto as any).crop_x,
               cropY: registerDto.cropY ?? (registerDto as any).crop_y,
-              cropWidth: registerDto.cropWidth ?? (registerDto as any).crop_width,
-              cropHeight: registerDto.cropHeight ?? (registerDto as any).crop_height,
+              cropWidth:
+                registerDto.cropWidth ?? (registerDto as any).crop_width,
+              cropHeight:
+                registerDto.cropHeight ?? (registerDto as any).crop_height,
               cropZoom: registerDto.cropZoom ?? (registerDto as any).crop_zoom,
             },
           }),
@@ -114,6 +123,10 @@ export class RegistrationProvider {
 
       this.outboxService.publishPendingMessages().catch((err) => {
         Logger.error(`Immediate publish attempt failed: ${err.message}`);
+        throw new RpcException({
+          code: status.INTERNAL,
+          message: 'Immediate publish attempt failed',
+        });
       });
 
       return {
@@ -145,11 +158,11 @@ export class RegistrationProvider {
     });
 
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new RpcException('User not found');
     }
 
     if (user.isVerified) {
-      throw new BadRequestException('User is already verified');
+      throw new RpcException('User is already verified');
     }
 
     const isCodeMatch = await bcrypt.compare(
@@ -158,11 +171,11 @@ export class RegistrationProvider {
     );
 
     if (!isCodeMatch) {
-      throw new BadRequestException('Invalid verification code');
+      throw new RpcException('Invalid verification code');
     }
 
     if (user.verificationCodeExpiresAt < new Date()) {
-      throw new BadRequestException('Verification code expired');
+      throw new RpcException('Verification code expired');
     }
 
     user.isVerified = true;

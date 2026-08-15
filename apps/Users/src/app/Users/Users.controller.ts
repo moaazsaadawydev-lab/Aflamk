@@ -113,4 +113,31 @@ export class UsersController {
 
     return this.appService.refresh(token);
   }
+
+  @GrpcMethod('UsersService', 'ChangePassword')
+  async changePassword(@Payload() data: any) {
+    const userId = data.userId || data.user_id;
+    const oldPassword = data.oldPassword || data.old_password;
+    const newPassword = data.newPassword || data.new_password;
+    const confirmPassword = data.confirmPassword || data.confirm_password;
+    const userAgent = data.userAgent || data.user_agent;
+    const ipAddress = data.ipAddress || data.ip_address;
+
+    if (!userId) {
+      throw new RpcException('User ID is required for password change');
+    }
+    if (!oldPassword || !newPassword) {
+      throw new RpcException('Old password and new password are required');
+    }
+
+    return await this.appService.changePassword({
+      userId,
+      oldPassword,
+      newPassword,
+      confirmPassword,
+      userAgent,
+      ipAddress,
+    });
+  }
 }
+

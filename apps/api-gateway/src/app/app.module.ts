@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ApiGatewayModule } from './API/ApiGateway.module';
+import { ApiGatewayModule } from './api-gateway-service/api-gateway.module';
 import { StorageModule } from '@booking-ticket-system/Storage';
+
 
 @Module({
   imports: [

@@ -4,9 +4,15 @@ import { join } from 'path';
 import { JwtAuthGuard } from '@booking-ticket-system/Guards';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ApiGatewayController } from './ApiGateway.controller';
-import { ApiGatewayService } from './ApiGateway.service';
 import { StorageModule } from '@booking-ticket-system/Storage';
+import { ApiGatewayController } from './api-gateway.controller';
+import { ApiGatewayService } from './api-gateway.service';
+import {
+  AuthProvider,
+  RegistrationProvider,
+  UserProfileProvider,
+  NotificationProvider,
+} from './providers';
 
 @Module({
   imports: [
@@ -40,23 +46,6 @@ import { StorageModule } from '@booking-ticket-system/Storage';
         name: 'NOTIFICATION_SERVICE',
         inject: [ConfigService],
         useFactory: (config: ConfigService) => ({
-          transport: Transport.GRPC,
-          options: {
-            package: 'notification',
-            protoPath: join(process.cwd(), 'libs/protos/Notifications.proto'),
-            url:
-              process.env.NODE_ENV === 'docker-development'
-                ? 'notifications-service:50052'
-                : process.env.NODE_ENV === 'development'
-                  ? 'localhost:50052'
-                  : 'notifications-service:50052',
-          },
-        }),
-      },
-      {
-        name: 'NOTIFICATION_SERVICE',
-        inject: [ConfigService],
-        useFactory: (config: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
             urls: [config.get<string>('MQ_URL')],
@@ -77,6 +66,13 @@ import { StorageModule } from '@booking-ticket-system/Storage';
     }),
   ],
   controllers: [ApiGatewayController],
-  providers: [ApiGatewayService, JwtAuthGuard],
+  providers: [
+    ApiGatewayService,
+    JwtAuthGuard,
+    AuthProvider,
+    RegistrationProvider,
+    UserProfileProvider,
+    NotificationProvider,
+  ],
 })
 export class ApiGatewayModule {}

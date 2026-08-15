@@ -40,12 +40,18 @@ export class NotificationEmailPublisherService implements OnModuleInit {
 
     for (const notification of pendingNotifications) {
       try {
+        const subject =
+          notification.emailTemplate === 'PasswordChanged'
+            ? notification.title || 'Security Alert: Password Changed'
+            : notification.title || 'Activate Your Account - Aflamak';
+
         await this.mailerService.sendMail({
           to: notification.email!,
-          subject: 'Activate Your Account - Aflamak',
+          subject,
           template: notification.emailTemplate || 'ActiveYourEmail',
           context: notification.emailContext || {},
         });
+
 
         notification.emailStatus = EmailStatus.SENT;
         await this.notificationRepository.save(notification);

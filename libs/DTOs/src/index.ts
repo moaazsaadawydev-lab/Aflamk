@@ -5,4 +5,5 @@ export * from './lib/Login.dto';
 export * from './lib/Notifications.dto';
 export * from './lib/UpdateUserProfile.dto';
 export * from './lib/CropFields.dto';
+export * from './lib/ChangePassword.dto';
 

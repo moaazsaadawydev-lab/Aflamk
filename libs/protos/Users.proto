@@ -9,6 +9,7 @@ service UsersService {
   rpc CurrentUser(CurrentUserRequest) returns (CurrentUserResponse) {}
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {}
   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse) {}
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {}
 }
 
 message CropData {
@@ -106,3 +107,18 @@ message UpdateProfileResponse {
   int32 age = 5;
   optional string avatar_key = 6;
 }
+
+message ChangePasswordRequest {
+  string user_id = 1;
+  string old_password = 2;
+  string new_password = 3;
+  string confirm_password = 4;
+  optional string user_agent = 5;
+  optional string ip_address = 6;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+

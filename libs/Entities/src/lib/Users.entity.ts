@@ -74,6 +74,9 @@ export class Users {
   @Column({ type: 'timestamp', nullable: true, default: null })
   passwordResetCodeExpiresAt!: Date | null;
 
+  @Column({ type: 'timestamp', nullable: true, default: null })
+  passwordChangedAt!: Date | null;
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => TIMESTAMP,
