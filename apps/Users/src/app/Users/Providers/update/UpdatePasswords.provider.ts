@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { Users, Session, OutboxMessage } from '@booking-ticket-system/Entities';
+import { Users, OutboxMessage } from '@booking-ticket-system/Entities';
 import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
+import { RedisService } from '@booking-ticket-system/Redis';
 import * as bcrypt from 'bcryptjs';
 
 export interface ChangePasswordPayload {
@@ -24,6 +25,7 @@ export class UpdatePasswordsProvider {
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly outboxService: OutboxPublisherService,
+    private readonly redisService: RedisService,
   ) {}
 
   async execute(
@@ -67,14 +69,11 @@ export class UpdatePasswordsProvider {
         });
       }
 
-
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);
       user.password = hashedNewPassword;
       user.passwordChangedAt = new Date();
 
       await queryRunner.manager.save(user);
-
-      await queryRunner.manager.delete(Session, { userId: user.id });
 
       const changedAt = new Date().toISOString();
       await queryRunner.manager.save(
@@ -92,11 +91,15 @@ export class UpdatePasswordsProvider {
 
       await queryRunner.commitTransaction();
 
+      // Revoke all active Redis sessions across all devices
+      await this.redisService.revokeAllUserSessions(user.id);
+
       this.outboxService.publishPendingMessages().catch((err) => {
         this.logger.error(
           `Immediate outbox publish attempt failed: ${err.message}`,
         );
       });
+
 
       return {
         success: true,

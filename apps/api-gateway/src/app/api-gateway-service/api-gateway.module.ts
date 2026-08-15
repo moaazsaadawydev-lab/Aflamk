@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { JwtAuthGuard } from '@booking-ticket-system/Guards';
+import { JwtAuthGuard, ChangePasswordRateLimitGuard } from '@booking-ticket-system/Guards';
 import { JwtModule } from '@nestjs/jwt';
+
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StorageModule } from '@booking-ticket-system/Storage';
 import { ApiGatewayController } from './api-gateway.controller';
@@ -69,10 +70,12 @@ import {
   providers: [
     ApiGatewayService,
     JwtAuthGuard,
+    ChangePasswordRateLimitGuard,
     AuthProvider,
     RegistrationProvider,
     UserProfileProvider,
     NotificationProvider,
   ],
+
 })
 export class ApiGatewayModule {}

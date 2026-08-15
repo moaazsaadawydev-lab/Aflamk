@@ -5,34 +5,45 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { RedisService, RATE_LIMIT_PREFIX } from '@booking-ticket-system/Redis';
 
 @Injectable()
 export class ChangePasswordRateLimitGuard implements CanActivate {
-  private static failedAttemptsMap = new Map<string, number[]>();
-  private readonly WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+  private readonly WINDOW_TTL_SECONDS = 900; // 15 minutes
   private readonly MAX_FAILED_ATTEMPTS = 5;
 
-  canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest();
-    const userId = request.user?.id || 'anonymous';
-    const ipAddress =
-      (request.headers['x-forwarded-for'] as string) ||
-      request.socket.remoteAddress ||
-      '';
-    const key = `${userId}:${ipAddress}`;
+  constructor(private readonly redisService: RedisService) {}
 
-    const now = Date.now();
-    const attempts =
-      ChangePasswordRateLimitGuard.failedAttemptsMap.get(key) || [];
-    const validAttempts = attempts.filter(
-      (timestamp) => now - timestamp < this.WINDOW_MS,
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const httpContext = context.switchToHttp();
+    const request = httpContext.getRequest();
+    const response = httpContext.getResponse();
+
+    const userId = request.user?.id || 'anonymous';
+    const clientIp =
+      (request.headers['x-forwarded-for'] as string) ||
+      request.ip ||
+      request.socket.remoteAddress ||
+      'anonymous';
+
+    const rateLimitKey = `${RATE_LIMIT_PREFIX}change-password:${userId}:${clientIp}`;
+
+    const currentAttempts = await this.redisService.incrementCounter(
+      rateLimitKey,
+      this.WINDOW_TTL_SECONDS,
     );
 
-    ChangePasswordRateLimitGuard.failedAttemptsMap.set(key, validAttempts);
+    if (response && typeof response.setHeader === 'function') {
+      response.setHeader('X-RateLimit-Limit', this.MAX_FAILED_ATTEMPTS);
+      response.setHeader(
+        'X-RateLimit-Remaining',
+        Math.max(0, this.MAX_FAILED_ATTEMPTS - currentAttempts),
+      );
+    }
 
-    if (validAttempts.length >= this.MAX_FAILED_ATTEMPTS) {
+    if (currentAttempts > this.MAX_FAILED_ATTEMPTS) {
       throw new HttpException(
-        'Too many failed password change attempts. Please try again after 15 minutes.',
+        'Too many password change attempts. Please try again after 15 minutes.',
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
@@ -40,17 +51,13 @@ export class ChangePasswordRateLimitGuard implements CanActivate {
     return true;
   }
 
-  public static recordFailedAttempt(userId?: string, ipAddress?: string): void {
-    const key = `${userId || 'anonymous'}:${ipAddress || ''}`;
-    const now = Date.now();
-    const attempts =
-      ChangePasswordRateLimitGuard.failedAttemptsMap.get(key) || [];
-    attempts.push(now);
-    ChangePasswordRateLimitGuard.failedAttemptsMap.set(key, attempts);
-  }
+  public static recordFailedAttempt(
+    userId?: string,
+    ipAddress?: string,
+  ): void {}
 
-  public static clearFailedAttempts(userId?: string, ipAddress?: string): void {
-    const key = `${userId || 'anonymous'}:${ipAddress || ''}`;
-    ChangePasswordRateLimitGuard.failedAttemptsMap.delete(key);
-  }
+  public static clearFailedAttempts(
+    userId?: string,
+    ipAddress?: string,
+  ): void {}
 }

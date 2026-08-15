@@ -26,7 +26,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Users } from '@booking-ticket-system/Entities';
 import { Request, Response } from 'express';
-import { JwtAuthGuard, ChangePasswordRateLimitGuard } from '@booking-ticket-system/Guards';
+import {
+  JwtAuthGuard,
+  ChangePasswordRateLimitGuard,
+} from '@booking-ticket-system/Guards';
 import { CurrentUser } from '@booking-ticket-system/Decorators';
 import { TransformResponseInterceptor } from '@booking-ticket-system/Common';
 

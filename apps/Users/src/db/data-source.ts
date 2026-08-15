@@ -1,5 +1,5 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { Users, OutboxMessage, Session } from '@booking-ticket-system/Entities';
+import { Users, OutboxMessage } from '@booking-ticket-system/Entities';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -14,7 +14,7 @@ export const UsersDataSourceOptions: DataSourceOptions = {
   username: process.env.DATABASE_USER,
   password: process.env.DATABASE_PASSWORD,
   database: process.env.USERS_DATABASE_NAME,
-  entities: [Users, OutboxMessage, Session],
+  entities: [Users, OutboxMessage],
   migrations: ['apps/Users/src/db/migrations/*.ts'],
   synchronize: false,
 };

@@ -4,7 +4,6 @@ import { AppModule } from './app/app.module';
 import cookieParser from 'cookie-parser';
 import { GrpcToHttpExceptionFilter } from '@booking-ticket-system/Filters';
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api/v1';
@@ -13,9 +12,8 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalFilters(new GrpcToHttpExceptionFilter());
 
-
   const port = process.env.API_GATEWAY_PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   Logger.log(
     `Application is running on: http://localhost:${port}/${globalPrefix}`,
   );

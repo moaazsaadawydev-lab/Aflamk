@@ -81,8 +81,6 @@ export class AuthProvider implements OnModuleInit {
         }),
       );
 
-      ChangePasswordRateLimitGuard.clearFailedAttempts(user?.id, ipAddress);
-
       return {
         success: true,
         message:
@@ -90,10 +88,10 @@ export class AuthProvider implements OnModuleInit {
           'Password updated successfully. Please log in again.',
       };
     } catch (error: any) {
-      ChangePasswordRateLimitGuard.recordFailedAttempt(user?.id, ipAddress);
       throw error;
     }
   }
+
 
   async refresh(refreshToken: string, response: Response) {
     if (!refreshToken) {

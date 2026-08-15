@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { LoginDto } from '@booking-ticket-system/DTOs';
-import { Users, Session } from '@booking-ticket-system/Entities';
-import { MoreThan, Repository } from 'typeorm';
+import { Users } from '@booking-ticket-system/Entities';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
@@ -12,6 +12,11 @@ import {
   AccessPayloadType,
   RefreshPayloadType,
 } from '@booking-ticket-system/Types';
+import {
+  RedisService,
+  SESSION_PREFIX,
+  USER_SESSIONS_PREFIX,
+} from '@booking-ticket-system/Redis';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -19,10 +24,9 @@ export class AuthProvider {
   constructor(
     @InjectRepository(Users)
     private readonly userRepository: Repository<Users>,
-    @InjectRepository(Session)
-    private readonly sessionRepository: Repository<Session>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {}
 
   private parseDurationToMs(duration?: string | number): number {
@@ -112,18 +116,23 @@ export class AuthProvider {
     const refreshExpireIn = this.configService.get<string>(
       'JWT_REFRESH_EXPIRE_IN',
     );
-    const expiresAt = new Date(
-      Date.now() + this.parseDurationToMs(refreshExpireIn),
+    const ttlSeconds = Math.floor(this.parseDurationToMs(refreshExpireIn) / 1000);
+
+    const sessionKey = `${SESSION_PREFIX}${user.id}:${sessionId}`;
+    const userSessionsKey = `${USER_SESSIONS_PREFIX}${user.id}`;
+
+    await this.redisService.set(
+      sessionKey,
+      {
+        refreshTokenHash,
+        userAgent: userAgent ?? null,
+        ipAddress: ipAddress ?? null,
+        createdAt: new Date().toISOString(),
+      },
+      ttlSeconds,
     );
 
-    await this.sessionRepository.save({
-      id: sessionId,
-      userId: user.id,
-      refreshTokenHash,
-      expiresAt,
-      userAgent: userAgent ?? null,
-      ipAddress: ipAddress ?? null,
-    });
+    await this.redisService.sadd(userSessionsKey, sessionId);
 
     return {
       accessToken,
@@ -151,48 +160,61 @@ export class AuthProvider {
       });
     }
 
-    if (!refreshTokenPayload.sessionId) {
+    if (!refreshTokenPayload.sessionId || !refreshTokenPayload.id) {
       throw new RpcException({
         code: status.UNAUTHENTICATED,
         message: 'Invalid or expired refresh token',
       });
     }
 
-    const session = await this.sessionRepository.findOne({
-      where: {
-        id: refreshTokenPayload.sessionId,
-        userId: refreshTokenPayload.id,
-        expiresAt: MoreThan(new Date()),
-      },
-      relations: { user: true },
-    });
+    const userId = refreshTokenPayload.id;
+    const sessionId = refreshTokenPayload.sessionId;
+    const sessionKey = `${SESSION_PREFIX}${userId}:${sessionId}`;
+    const userSessionsKey = `${USER_SESSIONS_PREFIX}${userId}`;
 
-    if (!session || !session.user) {
+    const sessionData = await this.redisService.get<{
+      refreshTokenHash: string;
+      userAgent?: string;
+      ipAddress?: string;
+      createdAt?: string;
+    }>(sessionKey);
+
+    if (!sessionData) {
       throw new RpcException({
         code: status.UNAUTHENTICATED,
-        message: 'Invalid or expired refresh token',
+        message: 'Invalid or expired session. Please log in again.',
       });
     }
 
     const isMatch = await bcrypt.compare(
       refreshToken,
-      session.refreshTokenHash,
+      sessionData.refreshTokenHash,
     );
 
     if (!isMatch) {
+      await this.redisService.del(sessionKey);
+      await this.redisService.srem(userSessionsKey, sessionId);
       throw new RpcException({
         code: status.UNAUTHENTICATED,
         message: 'Invalid or expired refresh token',
       });
     }
 
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
 
-    const user = session.user;
+    if (!user) {
+      throw new RpcException({
+        code: status.UNAUTHENTICATED,
+        message: 'User not found',
+      });
+    }
 
     const accessPayload: AccessPayloadType = { id: user.id, role: user.role };
     const refreshPayload: RefreshPayloadType = {
       id: user.id,
-      sessionId: session.id,
+      sessionId,
     };
 
     const [accessToken, newRefreshToken] = await Promise.all([
@@ -211,18 +233,21 @@ export class AuthProvider {
     ]);
 
     const salt = await bcrypt.genSalt(10);
+    const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, salt);
     const refreshExpireIn = this.configService.get<string>(
       'JWT_REFRESH_EXPIRE_IN',
     );
-    const newExpiresAt = new Date(
-      Date.now() + this.parseDurationToMs(refreshExpireIn),
+    const ttlSeconds = Math.floor(this.parseDurationToMs(refreshExpireIn) / 1000);
+
+    await this.redisService.set(
+      sessionKey,
+      {
+        ...sessionData,
+        refreshTokenHash: newRefreshTokenHash,
+        updatedAt: new Date().toISOString(),
+      },
+      ttlSeconds,
     );
-
-    session.refreshTokenHash = await bcrypt.hash(newRefreshToken, salt);
-    session.expiresAt = newExpiresAt;
-    session.lastUsedAt = new Date();
-
-    await this.sessionRepository.save(session);
 
     return {
       message: 'Success',
@@ -231,4 +256,5 @@ export class AuthProvider {
     };
   }
 }
+
 

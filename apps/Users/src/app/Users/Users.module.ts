@@ -5,8 +5,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
-import { Users, Session } from '@booking-ticket-system/Entities';
+import { Users } from '@booking-ticket-system/Entities';
 import { OutboxModule } from '../outbox/outbox.module';
+import { RedisModule } from '@booking-ticket-system/Redis';
 import { SanitizeUserInterceptor } from '@booking-ticket-system/Common';
 import {
   RegistrationProvider,
@@ -22,7 +23,8 @@ import {
       isGlobal: true,
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
     }),
-    TypeOrmModule.forFeature([Users, Session]),
+    TypeOrmModule.forFeature([Users]),
+    RedisModule,
     ClientsModule.registerAsync([
       {
         name: 'NOTIFICATION_SERVICE',
