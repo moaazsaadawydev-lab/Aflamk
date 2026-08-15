@@ -2,7 +2,8 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import cookieParser from 'cookie-parser';
-import { GrpcToHttpExceptionFilter } from './app/filters/grpc-to-http-exception.filter';
+import { GrpcToHttpExceptionFilter } from '@booking-ticket-system/Filters';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

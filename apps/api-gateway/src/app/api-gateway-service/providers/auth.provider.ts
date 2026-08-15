@@ -13,7 +13,8 @@ import {
   ChangePasswordDto,
 } from '@booking-ticket-system/DTOs';
 import { Users } from '@booking-ticket-system/Entities';
-import { ChangePasswordRateLimitGuard } from '../../guards/change-password-rate-limit.guard';
+import { ChangePasswordRateLimitGuard } from '@booking-ticket-system/Guards';
+
 
 @Injectable()
 export class AuthProvider implements OnModuleInit {
