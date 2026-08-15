@@ -54,6 +54,22 @@ services:
     networks:
       - booking-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: redis-server --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - booking-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   users-service:
     build:
       context: .
@@ -69,6 +85,8 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - booking-network
@@ -129,6 +147,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - booking-network
 
@@ -140,3 +160,5 @@ volumes:
   postgres_data:
   rabbitmq_data:
   minio_data:
+  redis_data:
+
