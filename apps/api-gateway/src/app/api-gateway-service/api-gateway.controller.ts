@@ -21,6 +21,8 @@ import {
   VerifyEmailDto,
   UpdateUserProfileDto,
   ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
 } from '@booking-ticket-system/DTOs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -29,6 +31,7 @@ import { Request, Response } from 'express';
 import {
   JwtAuthGuard,
   ChangePasswordRateLimitGuard,
+  ForgotPasswordRateLimitGuard,
 } from '@booking-ticket-system/Guards';
 import { CurrentUser } from '@booking-ticket-system/Decorators';
 import { TransformResponseInterceptor } from '@booking-ticket-system/Common';
@@ -146,5 +149,18 @@ export class ApiGatewayController {
       '';
 
     return this.authProvider.changePassword(user, body, userAgent, ip);
+  }
+
+  @Post('auth/users/password/forgot')
+  @UseGuards(ForgotPasswordRateLimitGuard)
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    return this.authProvider.forgotPassword(body);
+  }
+
+  @Post('auth/users/password/reset')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    return this.authProvider.resetPassword(body);
   }
 }

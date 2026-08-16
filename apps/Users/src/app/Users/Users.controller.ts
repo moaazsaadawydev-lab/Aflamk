@@ -152,4 +152,52 @@ export class UsersController {
       ipAddress,
     });
   }
+
+  @GrpcMethod('UsersService', 'ForgotPassword')
+  async forgotPassword(@Payload() data: { email?: string }) {
+    if (!data?.email) {
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'Email is required',
+      });
+    }
+
+    return await this.appService.forgotPassword(data.email);
+  }
+
+  @GrpcMethod('UsersService', 'ResetPassword')
+  async resetPassword(@Payload() data: any) {
+    const email = data?.email;
+    const otp = data?.otp;
+    const newPassword = data?.newPassword || data?.new_password;
+    const confirmPassword = data?.confirmPassword || data?.confirm_password;
+
+    if (!email) {
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'Email is required',
+      });
+    }
+
+    if (!otp) {
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'Verification code is required',
+      });
+    }
+
+    if (!newPassword) {
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'New password is required',
+      });
+    }
+
+    return await this.appService.resetPassword({
+      email,
+      otp,
+      newPassword,
+      confirmPassword,
+    });
+  }
 }

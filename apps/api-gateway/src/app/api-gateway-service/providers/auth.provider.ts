@@ -11,10 +11,11 @@ import {
   LoginDto,
   VerifyEmailDto,
   ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
 } from '@booking-ticket-system/DTOs';
 import { Users } from '@booking-ticket-system/Entities';
 import { ChangePasswordRateLimitGuard } from '@booking-ticket-system/Guards';
-
 
 @Injectable()
 export class AuthProvider implements OnModuleInit {
@@ -115,6 +116,41 @@ export class AuthProvider implements OnModuleInit {
 
     return {
       accessToken: newAccessToken,
+    };
+  }
+
+  async forgotPassword(body: ForgotPasswordDto) {
+    const result: any = await lastValueFrom(
+      this.usersService.ForgotPassword({
+        email: body.email,
+      }),
+    );
+
+    return {
+      success: result?.success ?? true,
+      message:
+        result?.message ||
+        'Password reset code has been sent to your email.',
+    };
+  }
+
+  async resetPassword(body: ResetPasswordDto) {
+    const result: any = await lastValueFrom(
+      this.usersService.ResetPassword({
+        email: body.email,
+        otp: body.otp,
+        new_password: body.newPassword,
+        confirm_password: body.confirmPassword,
+        newPassword: body.newPassword,
+        confirmPassword: body.confirmPassword,
+      }),
+    );
+
+    return {
+      success: result?.success ?? true,
+      message:
+        result?.message ||
+        'Password has been reset successfully. Please log in with your new password.',
     };
   }
 }

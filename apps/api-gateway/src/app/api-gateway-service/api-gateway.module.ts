@@ -1,8 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { JwtAuthGuard, ChangePasswordRateLimitGuard } from '@booking-ticket-system/Guards';
+import {
+  JwtAuthGuard,
+  ChangePasswordRateLimitGuard,
+  ForgotPasswordRateLimitGuard,
+} from '@booking-ticket-system/Guards';
 import { JwtModule } from '@nestjs/jwt';
+import { RedisModule } from '@booking-ticket-system/Redis';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StorageModule } from '@booking-ticket-system/Storage';
@@ -18,6 +23,7 @@ import {
 @Module({
   imports: [
     StorageModule,
+    RedisModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
@@ -71,11 +77,11 @@ import {
     ApiGatewayService,
     JwtAuthGuard,
     ChangePasswordRateLimitGuard,
+    ForgotPasswordRateLimitGuard,
     AuthProvider,
     RegistrationProvider,
     UserProfileProvider,
     NotificationProvider,
   ],
-
 })
 export class ApiGatewayModule {}

@@ -3,7 +3,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { OutboxMessage, Users } from '@booking-ticket-system/Entities';
 import { UpdateUserProfileDto } from '@booking-ticket-system/DTOs';
-import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
+import { OutboxPublisherService } from '../../outbox/outbox-publisher.service';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 

@@ -10,7 +10,10 @@ import {
   ProfileProvider,
   UpdateUserProvider,
   UpdatePasswordsProvider,
+  ForgotPasswordProvider,
+  ResetPasswordProvider,
   ChangePasswordPayload,
+  ResetPasswordPayload,
 } from './Providers';
 
 @Injectable()
@@ -21,6 +24,8 @@ export class UsersService {
     private readonly profileProvider: ProfileProvider,
     private readonly updateUserProvider: UpdateUserProvider,
     private readonly updatePasswordsProvider: UpdatePasswordsProvider,
+    private readonly forgotPasswordProvider: ForgotPasswordProvider,
+    private readonly resetPasswordProvider: ResetPasswordProvider,
   ) {}
 
   register(registerDto: any) {
@@ -49,6 +54,14 @@ export class UsersService {
 
   changePassword(payload: ChangePasswordPayload) {
     return this.updatePasswordsProvider.execute(payload);
+  }
+
+  forgotPassword(email: string) {
+    return this.forgotPasswordProvider.execute(email);
+  }
+
+  resetPassword(payload: ResetPasswordPayload) {
+    return this.resetPasswordProvider.execute(payload);
   }
 
   refresh(refreshToken: string) {

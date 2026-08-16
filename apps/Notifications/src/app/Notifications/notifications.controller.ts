@@ -162,5 +162,125 @@ export class NotificationController {
       channel.nack(originalMsg, false, !isRedelivered);
     }
   }
+
+  @EventPattern('USER_FORGOT_PASSWORD')
+  async handleUserForgotPassword(
+    @Payload()
+    data: {
+      userId?: string;
+      email: string;
+      name?: string;
+      otp: string;
+      eventId?: string;
+      sourceEventId?: string;
+    },
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    const sourceEventId = data.sourceEventId || data.eventId;
+
+    const notificationDto: NotificationDto = {
+      UserId: data.userId || 'anonymous',
+      title: 'Reset Your Password',
+      body: `Your password reset code is ${data.otp}. It is valid for 5 minutes.`,
+      type: NotificationType.ALERT_MESSAGE,
+    };
+
+    try {
+      await this.NotificationsService.createNotification(
+        notificationDto,
+        {
+          email: data.email,
+          template: 'ForgotPassword',
+          context: {
+            name: data.name || 'User',
+            otp: data.otp,
+          },
+        },
+        sourceEventId,
+      );
+
+      channel.ack(originalMsg);
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        this.logger.warn(
+          `Unique constraint violation (23505) for event ${sourceEventId}. Treating as already processed.`,
+        );
+        channel.ack(originalMsg);
+        return;
+      }
+
+      this.logger.error(
+        `Failed to process USER_FORGOT_PASSWORD event for ${data.email}: ${error.message}`,
+      );
+
+      const isRedelivered = originalMsg.fields.redelivered;
+      channel.nack(originalMsg, false, !isRedelivered);
+    }
+  }
+
+  @EventPattern('USER_PASSWORD_RESET_SUCCESS')
+  async handleUserPasswordResetSuccess(
+    @Payload()
+    data: {
+      userId: string;
+      email: string;
+      name?: string;
+      changedAt: string;
+      ipAddress?: string;
+      userAgent?: string;
+      eventId?: string;
+      sourceEventId?: string;
+    },
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    const sourceEventId = data.sourceEventId || data.eventId;
+
+    const notificationDto: NotificationDto = {
+      UserId: data.userId,
+      title: 'Security Alert: Password Reset Successful',
+      body: 'Your account password has been successfully reset.',
+      type: NotificationType.ALERT_MESSAGE,
+    };
+
+    try {
+      await this.NotificationsService.createNotification(
+        notificationDto,
+        {
+          email: data.email,
+          template: 'PasswordChanged',
+          context: {
+            name: data.name || 'User',
+            changedAt: data.changedAt,
+            ipAddress: data.ipAddress || '',
+            userAgent: data.userAgent || '',
+          },
+        },
+        sourceEventId,
+      );
+
+      channel.ack(originalMsg);
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        this.logger.warn(
+          `Unique constraint violation (23505) for event ${sourceEventId}. Treating as already processed.`,
+        );
+        channel.ack(originalMsg);
+        return;
+      }
+
+      this.logger.error(
+        `Failed to process USER_PASSWORD_RESET_SUCCESS event for ${data.email}: ${error.message}`,
+      );
+
+      const isRedelivered = originalMsg.fields.redelivered;
+      channel.nack(originalMsg, false, !isRedelivered);
+    }
+  }
 }
 
