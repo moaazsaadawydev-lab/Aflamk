@@ -74,6 +74,12 @@ export class ApiGatewayController {
     return this.authProvider.verifyEmail(body);
   }
 
+  @Post('auth/users/verify-email')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmailAlias(@Body() body: VerifyEmailDto) {
+    return this.authProvider.verifyEmail(body);
+  }
+
   @Post('auth/users/login')
   @HttpCode(HttpStatus.OK)
   async login(

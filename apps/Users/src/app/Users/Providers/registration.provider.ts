@@ -10,20 +10,23 @@ import {
   NotificationType,
   UserGender,
 } from '@booking-ticket-system/Utils';
+import { RedisService } from '@booking-ticket-system/Redis';
 import * as bcrypt from 'bcryptjs';
 import { randomInt, randomUUID } from 'crypto';
-import { VERIFICATION_CODE_EXPIRY_MS } from '@booking-ticket-system/Constants';
 import { OutboxPublisherService } from '../../outbox/outbox-publisher.service';
 import { status } from '@grpc/grpc-js';
 
 @Injectable()
 export class RegistrationProvider {
+  private readonly logger = new Logger(RegistrationProvider.name);
+
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
     @InjectRepository(Users)
     private readonly userRepository: Repository<Users>,
     private readonly outboxService: OutboxPublisherService,
+    private readonly redisService: RedisService,
   ) {}
 
   async register(registerDto: any): Promise<any> {
@@ -48,11 +51,10 @@ export class RegistrationProvider {
     }
 
     const code = randomInt(100000, 1000000).toString();
-
-    const [passwordHash, verificationCodeHash] = await Promise.all([
-      bcrypt.hash(registerDto.password, await bcrypt.genSalt(10)),
-      bcrypt.hash(code, await bcrypt.genSalt(10)),
-    ]);
+    const passwordHash = await bcrypt.hash(
+      registerDto.password,
+      await bcrypt.genSalt(10),
+    );
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -73,10 +75,7 @@ export class RegistrationProvider {
         gender: registerDto.gender as UserGender,
         country: registerDto.country as Country,
         avatarKey: avatarKey,
-        verificationCode: verificationCodeHash,
-        verificationCodeExpiresAt: new Date(
-          Date.now() + VERIFICATION_CODE_EXPIRY_MS,
-        ),
+        isVerified: false,
       });
 
       await queryRunner.manager.save(user);
@@ -121,6 +120,12 @@ export class RegistrationProvider {
 
       await queryRunner.commitTransaction();
 
+      const otpKey = `otp:verify-email:${normalizedEmail}`;
+      const attemptsKey = `rate:verify-email-attempts:${normalizedEmail}`;
+
+      await this.redisService.set(otpKey, code, 600);
+      await this.redisService.del(attemptsKey);
+
       this.outboxService.publishPendingMessages().catch((err) => {
         Logger.error(`Immediate publish attempt failed: ${err.message}`);
         throw new RpcException({
@@ -153,36 +158,57 @@ export class RegistrationProvider {
   async verifyEmail(
     verifyEmailDto: VerifyEmailDto,
   ): Promise<{ message: string }> {
+    const normalizedEmail = verifyEmailDto.email.trim().toLowerCase();
+
     const user = await this.userRepository.findOne({
-      where: { email: verifyEmailDto.email },
+      where: { email: normalizedEmail },
     });
 
     if (!user) {
-      throw new RpcException('User not found');
+      throw new RpcException({
+        code: status.NOT_FOUND,
+        message: 'User not found',
+      });
     }
 
     if (user.isVerified) {
-      throw new RpcException('User is already verified');
+      throw new RpcException({
+        code: status.FAILED_PRECONDITION,
+        message: 'User is already verified',
+      });
     }
 
-    const isCodeMatch = await bcrypt.compare(
-      String(verifyEmailDto.code),
-      user.verificationCode,
-    );
+    const otpKey = `otp:verify-email:${normalizedEmail}`;
+    const attemptsKey = `rate:verify-email-attempts:${normalizedEmail}`;
 
-    if (!isCodeMatch) {
-      throw new RpcException('Invalid verification code');
+    const attempts = await this.redisService.incrementCounter(attemptsKey, 600);
+
+    if (attempts > 5) {
+      await this.redisService.del(otpKey);
+      throw new RpcException({
+        code: status.PERMISSION_DENIED,
+        message:
+          'Too many invalid attempts. Please request a new verification code.',
+      });
     }
 
-    if (user.verificationCodeExpiresAt < new Date()) {
-      throw new RpcException('Verification code expired');
+    const storedOtp = await this.redisService.get<string>(otpKey);
+
+    if (
+      !storedOtp ||
+      String(storedOtp).trim() !== String(verifyEmailDto.code).trim()
+    ) {
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'Invalid or expired verification code.',
+      });
     }
 
     user.isVerified = true;
-    user.verificationCode = null;
-    user.verificationCodeExpiresAt = null;
-
     await this.userRepository.save(user);
+
+    await this.redisService.del(otpKey);
+    await this.redisService.del(attemptsKey);
 
     return { message: 'Email verified successfully' };
   }
