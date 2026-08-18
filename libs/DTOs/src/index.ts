@@ -8,3 +8,7 @@ export * from './lib/CropFields.dto';
 export * from './lib/ChangePassword.dto';
 export * from './lib/ForgotPassword.dto';
 export * from './lib/ResetPassword.dto';
+export * from './lib/RequestEmailChange.dto';
+export * from './lib/ConfirmEmailChange.dto';
+export * from './lib/FreezeAccount.dto';
+export * from './lib/RollbackEmail.dto';

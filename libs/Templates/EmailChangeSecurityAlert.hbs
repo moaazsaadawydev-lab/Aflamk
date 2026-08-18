@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Security Alert: Email Change Requested</title>
+    <style>
+      body {
+        background-color: #f9fafb;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrapper {
+        width: 100%;
+        background-color: #f9fafb;
+        padding: 40px 0;
+      }
+      .container {
+        max-width: 540px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #f3f4f6;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+        overflow: hidden;
+      }
+      .accent-bar {
+        height: 6px;
+        background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+      }
+      .content {
+        padding: 40px 48px;
+      }
+      .logo-container {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .logo {
+        font-size: 24px;
+        font-weight: 800;
+        color: #1e3a8a;
+        letter-spacing: -0.5px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .logo-icon {
+        margin-right: 8px;
+      }
+      .greeting {
+        color: #111827;
+        font-size: 22px;
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 16px;
+        text-align: center;
+      }
+      .message {
+        color: #4b5563;
+        font-size: 15px;
+        line-height: 24px;
+        margin-top: 0;
+        margin-bottom: 24px;
+        text-align: center;
+      }
+      .details-card {
+        background-color: #fffbeb;
+        border: 1px solid #fef3c7;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+      }
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 14px;
+      }
+      .detail-label {
+        color: #92400e;
+        font-weight: 600;
+      }
+      .detail-value {
+        color: #78350f;
+        font-weight: 500;
+      }
+      .warning {
+        color: #b45309;
+        font-size: 13px;
+        line-height: 20px;
+        margin-top: 0;
+        margin-bottom: 0;
+        text-align: center;
+      }
+      .footer {
+        background-color: #f9fafb;
+        padding: 24px 48px;
+        border-top: 1px solid #f3f4f6;
+        text-align: center;
+      }
+      .footer-text {
+        color: #9ca3af;
+        font-size: 12px;
+        line-height: 18px;
+        margin: 0;
+      }
+      .footer-copyright {
+        color: #9ca3af;
+        font-size: 11px;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="container">
+        <div class="accent-bar"></div>
+        <div class="content">
+          <div class="logo-container">
+            <span class="logo">
+              <span class="logo-icon">🎫</span> Booking Tickets
+            </span>
+          </div>
+          <h2 class="greeting">Security Alert: Email Change Requested</h2>
+          <p class="message">
+            Hi {{name}},<br /><br />
+            A request was made to change the email address associated with your account.
+          </p>
+          <div class="details-card">
+            <div class="detail-row">
+              <span class="detail-label">Current Email:</span>
+              <span class="detail-value">{{oldEmail}}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Requested New Email:</span>
+              <span class="detail-value">{{newEmail}}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Requested At:</span>
+              <span class="detail-value">{{requestedAt}}</span>
+            </div>
+          </div>
+          {{#if freezeToken}}
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="http://localhost:3000/api/v1/auth/users/account/freeze?token={{freezeToken}}" 
+               style="background-color: #dc2626; color: #ffffff; padding: 12px 28px; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 14px; display: inline-block; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);">
+              🚨 Emergency Account Freeze
+            </a>
+          </div>
+          {{/if}}
+          <p class="warning">
+            A confirmation code has been sent to the new email address.<br />
+            <strong>If you did not initiate this request</strong>, please click the emergency freeze button above immediately.
+          </p>
+        </div>
+        <div class="footer">
+          <p class="footer-text">
+            Security notification for your Booking Tickets account.
+          </p>
+          <p class="footer-copyright">
+            &copy; 2026 Booking Tickets. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -5,6 +5,7 @@ import {
   JwtAuthGuard,
   ChangePasswordRateLimitGuard,
   ForgotPasswordRateLimitGuard,
+  ChangeEmailRateLimitGuard,
 } from '@booking-ticket-system/Guards';
 import { JwtModule } from '@nestjs/jwt';
 import { RedisModule } from '@booking-ticket-system/Redis';
@@ -78,6 +79,7 @@ import {
     JwtAuthGuard,
     ChangePasswordRateLimitGuard,
     ForgotPasswordRateLimitGuard,
+    ChangeEmailRateLimitGuard,
     AuthProvider,
     RegistrationProvider,
     UserProfileProvider,

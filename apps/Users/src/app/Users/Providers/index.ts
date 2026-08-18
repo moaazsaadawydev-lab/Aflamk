@@ -5,3 +5,7 @@ export * from './UpdateUser.provider';
 export * from './password/UpdatePasswords.provider';
 export * from './password/forgot-password.provider';
 export * from './password/reset-password.provider';
+export * from './email/request-change-email.provider';
+export * from './email/confirm-change-email.provider';
+export * from './email/freeze-account.provider';
+export * from './email/rollback-email.provider';

@@ -102,6 +102,7 @@ export class ResetPasswordProvider {
       const hashedPassword = await bcrypt.hash(newPassword, 12);
       user.password = hashedPassword;
       user.passwordChangedAt = new Date();
+      user.mustChangePassword = false;
 
       await queryRunner.manager.save(user);
 
@@ -131,6 +132,10 @@ export class ResetPasswordProvider {
     await this.redisService.del(attemptsKey);
 
     if (user) {
+      // Auto-unlock emergency security freeze and attempts lock upon legitimate password reset
+      await this.redisService.del(`lock:change-email-frozen:${user.id}`);
+      await this.redisService.del(`lock:change-email-attempts:${user.id}`);
+
       // Atomically revoke all active user sessions across all devices
       await this.redisService.revokeAllUserSessions(user.id);
     }

@@ -13,6 +13,7 @@ import {
   Res,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import {
   LoginDto,
@@ -23,6 +24,10 @@ import {
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  RequestEmailChangeDto,
+  ConfirmEmailChangeDto,
+  FreezeAccountDto,
+  RollbackEmailDto,
 } from '@booking-ticket-system/DTOs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -32,6 +37,7 @@ import {
   JwtAuthGuard,
   ChangePasswordRateLimitGuard,
   ForgotPasswordRateLimitGuard,
+  ChangeEmailRateLimitGuard,
 } from '@booking-ticket-system/Guards';
 import { CurrentUser } from '@booking-ticket-system/Decorators';
 import { TransformResponseInterceptor } from '@booking-ticket-system/Common';
@@ -168,5 +174,62 @@ export class ApiGatewayController {
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() body: ResetPasswordDto) {
     return this.authProvider.resetPassword(body);
+  }
+
+  @Post('auth/users/email/change/request')
+  @UseGuards(JwtAuthGuard, ChangeEmailRateLimitGuard)
+  @HttpCode(HttpStatus.OK)
+  async requestChangeEmail(
+    @CurrentUser() user: Users,
+    @Body() body: RequestEmailChangeDto,
+  ) {
+    return this.authProvider.requestChangeEmail(user, body);
+  }
+
+  @Post('auth/users/email/change/confirm')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async confirmChangeEmail(
+    @CurrentUser() user: Users,
+    @Body() body: ConfirmEmailChangeDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authProvider.confirmChangeEmail(user, body, response);
+  }
+
+  @Post('auth/users/account/freeze')
+  @HttpCode(HttpStatus.OK)
+  async freezeAccount(
+    @Body() body: FreezeAccountDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authProvider.freezeAccount(body, response);
+  }
+
+  @Get('auth/users/account/freeze')
+  @HttpCode(HttpStatus.OK)
+  async freezeAccountByQuery(
+    @Query('token') token: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authProvider.freezeAccount({ token }, response);
+  }
+
+  @Post('auth/users/email/rollback')
+  @HttpCode(HttpStatus.OK)
+  async rollbackEmail(
+    @Body() body: RollbackEmailDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authProvider.rollbackEmail(body, response);
+  }
+
+  @Get('auth/users/email/rollback')
+  @HttpCode(HttpStatus.OK)
+  async rollbackEmailByQuery(
+    @Query('token') token: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authProvider.rollbackEmail({ token }, response);
   }
 }

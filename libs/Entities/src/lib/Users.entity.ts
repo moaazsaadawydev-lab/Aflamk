@@ -2,11 +2,13 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Country, UserGender, UserRole } from '@booking-ticket-system/Utils';
 import { TIMESTAMP } from '@booking-ticket-system/Constants';
+import type { UserEmailHistory } from './UserEmailHistory.entity';
 
 @Entity()
 export class Users {
@@ -64,6 +66,12 @@ export class Users {
 
   @Column({ type: 'timestamp', nullable: true, default: null })
   passwordChangedAt!: Date | null;
+
+  @Column({ type: 'boolean', default: false, nullable: false })
+  mustChangePassword!: boolean;
+
+  @OneToMany('UserEmailHistory', 'user')
+  emailHistory!: UserEmailHistory[];
 
   @CreateDateColumn({
     type: 'timestamp',

@@ -200,4 +200,41 @@ export class UsersController {
       confirmPassword,
     });
   }
+
+  @GrpcMethod('UsersService', 'RequestChangeEmail')
+  async requestChangeEmail(@Payload() data: any) {
+    const userId = data?.userId || data?.user_id;
+    const currentPassword = data?.currentPassword || data?.current_password;
+    const newEmail = data?.newEmail || data?.new_email;
+    Logger.log(data);
+
+    return await this.appService.requestChangeEmail({
+      userId,
+      currentPassword,
+      newEmail,
+    });
+  }
+
+  @GrpcMethod('UsersService', 'ConfirmChangeEmail')
+  async confirmChangeEmail(@Payload() data: any) {
+    const userId = data?.userId || data?.user_id;
+    const code = data?.code;
+
+    return await this.appService.confirmChangeEmail({
+      userId,
+      code,
+    });
+  }
+
+  @GrpcMethod('UsersService', 'FreezeAccount')
+  async freezeAccount(@Payload() data: any) {
+    const token = data?.token;
+    return await this.appService.freezeAccount(token);
+  }
+
+  @GrpcMethod('UsersService', 'RollbackEmail')
+  async rollbackEmail(@Payload() data: any) {
+    const token = data?.token;
+    return await this.appService.rollbackEmail(token);
+  }
 }

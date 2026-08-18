@@ -12,8 +12,14 @@ import {
   UpdatePasswordsProvider,
   ForgotPasswordProvider,
   ResetPasswordProvider,
+  RequestChangeEmailProvider,
+  ConfirmChangeEmailProvider,
+  FreezeAccountProvider,
+  RollbackEmailProvider,
   ChangePasswordPayload,
   ResetPasswordPayload,
+  RequestChangeEmailPayload,
+  ConfirmChangeEmailPayload,
 } from './Providers';
 
 @Injectable()
@@ -26,6 +32,10 @@ export class UsersService {
     private readonly updatePasswordsProvider: UpdatePasswordsProvider,
     private readonly forgotPasswordProvider: ForgotPasswordProvider,
     private readonly resetPasswordProvider: ResetPasswordProvider,
+    private readonly requestChangeEmailProvider: RequestChangeEmailProvider,
+    private readonly confirmChangeEmailProvider: ConfirmChangeEmailProvider,
+    private readonly freezeAccountProvider: FreezeAccountProvider,
+    private readonly rollbackEmailProvider: RollbackEmailProvider,
   ) {}
 
   register(registerDto: any) {
@@ -62,6 +72,22 @@ export class UsersService {
 
   resetPassword(payload: ResetPasswordPayload) {
     return this.resetPasswordProvider.execute(payload);
+  }
+
+  requestChangeEmail(payload: RequestChangeEmailPayload) {
+    return this.requestChangeEmailProvider.execute(payload);
+  }
+
+  confirmChangeEmail(payload: ConfirmChangeEmailPayload) {
+    return this.confirmChangeEmailProvider.execute(payload);
+  }
+
+  freezeAccount(token: string) {
+    return this.freezeAccountProvider.execute(token);
+  }
+
+  rollbackEmail(token: string) {
+    return this.rollbackEmailProvider.execute(token);
   }
 
   refresh(refreshToken: string) {

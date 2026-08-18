@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
-import { Users } from '@booking-ticket-system/Entities';
+import { Users, UserEmailHistory } from '@booking-ticket-system/Entities';
 import { OutboxModule } from '../outbox/outbox.module';
 import { RedisModule } from '@booking-ticket-system/Redis';
 import { SanitizeUserInterceptor } from '@booking-ticket-system/Common';
@@ -17,6 +17,10 @@ import {
   UpdatePasswordsProvider,
   ForgotPasswordProvider,
   ResetPasswordProvider,
+  RequestChangeEmailProvider,
+  ConfirmChangeEmailProvider,
+  FreezeAccountProvider,
+  RollbackEmailProvider,
 } from './Providers';
 
 @Module({
@@ -25,7 +29,7 @@ import {
       isGlobal: true,
       envFilePath: `libs/env/.env.${process.env.NODE_ENV}`,
     }),
-    TypeOrmModule.forFeature([Users]),
+    TypeOrmModule.forFeature([Users, UserEmailHistory]),
     RedisModule,
     ClientsModule.registerAsync([
       {
@@ -76,6 +80,10 @@ import {
     UpdatePasswordsProvider,
     ForgotPasswordProvider,
     ResetPasswordProvider,
+    RequestChangeEmailProvider,
+    ConfirmChangeEmailProvider,
+    FreezeAccountProvider,
+    RollbackEmailProvider,
     SanitizeUserInterceptor,
   ],
   exports: [
@@ -83,6 +91,10 @@ import {
     UpdatePasswordsProvider,
     ForgotPasswordProvider,
     ResetPasswordProvider,
+    RequestChangeEmailProvider,
+    ConfirmChangeEmailProvider,
+    FreezeAccountProvider,
+    RollbackEmailProvider,
     SanitizeUserInterceptor,
   ],
 })

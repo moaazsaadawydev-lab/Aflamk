@@ -45,7 +45,15 @@ export class NotificationEmailPublisherService implements OnModuleInit {
             ? notification.title || 'Security Alert: Password Changed'
             : notification.emailTemplate === 'ForgotPassword'
               ? notification.title || 'Reset Your Password - Verification Code'
-              : notification.title || 'Activate Your Account - Aflamak';
+              : notification.emailTemplate === 'EmailChangeOtp'
+                ? notification.title || 'Confirm Your New Email Address'
+                : notification.emailTemplate === 'EmailChangeSecurityAlert'
+                  ? notification.title || 'Security Alert: Email Change Requested'
+                  : notification.emailTemplate === 'EmailChangeSuccessAlert'
+                    ? notification.title || 'Security Notice: Email Address Changed'
+                    : notification.emailTemplate === 'AccountRecoveredAlert'
+                      ? notification.title || 'Account Restored Successfully'
+                      : notification.title || 'Activate Your Account - Aflamak';
 
         await this.mailerService.sendMail({
           to: notification.email!,

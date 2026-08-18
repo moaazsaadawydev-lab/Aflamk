@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { OutboxMessage, Users } from '@booking-ticket-system/Entities';
+import {
+  OutboxMessage,
+  Users,
+  UserEmailHistory,
+} from '@booking-ticket-system/Entities';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { OutboxModule } from './outbox/outbox.module';
 import { UsersModule } from './Users/Users.module';
@@ -21,7 +25,7 @@ import { UsersModule } from './Users/Users.module';
         username: config.get<string>('DATABASE_USER'),
         password: config.get<string>('DATABASE_PASSWORD'),
         database: config.get<string>('USERS_DATABASE_NAME'),
-        entities: [Users, OutboxMessage],
+        entities: [Users, OutboxMessage, UserEmailHistory],
         synchronize: process.env['NODE_ENV'] !== 'production',
         migrationsRun: process.env['NODE_ENV'] === 'production',
         migrations: [__dirname + '/migrations/*{.ts,.js}'],

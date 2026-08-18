@@ -282,5 +282,301 @@ export class NotificationController {
       channel.nack(originalMsg, false, !isRedelivered);
     }
   }
+
+  @EventPattern('user.email-change.otp-requested')
+  async handleEmailChangeOtpRequested(
+    @Payload()
+    data: {
+      userId: string;
+      oldEmail: string;
+      newEmail: string;
+      name?: string;
+      code: string;
+      eventId?: string;
+      sourceEventId?: string;
+    },
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    const sourceEventId = data.sourceEventId || data.eventId;
+
+    const notificationDto: NotificationDto = {
+      UserId: data.userId,
+      title: 'Confirm Your New Email Address',
+      body: `Your verification code is ${data.code}. It is valid for 10 minutes.`,
+      type: NotificationType.ALERT_MESSAGE,
+    };
+
+    try {
+      await this.NotificationsService.createNotification(
+        notificationDto,
+        {
+          email: data.newEmail,
+          template: 'EmailChangeOtp',
+          context: {
+            name: data.name || 'User',
+            otp: data.code,
+          },
+        },
+        sourceEventId,
+      );
+
+      channel.ack(originalMsg);
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        this.logger.warn(
+          `Unique constraint violation (23505) for event ${sourceEventId}. Treating as already processed.`,
+        );
+        channel.ack(originalMsg);
+        return;
+      }
+
+      this.logger.error(
+        `Failed to process user.email-change.otp-requested event for ${data.newEmail}: ${error.message}`,
+      );
+
+      const isRedelivered = originalMsg.fields.redelivered;
+      channel.nack(originalMsg, false, !isRedelivered);
+    }
+  }
+
+  @EventPattern('user.email-change.security-alert')
+  async handleEmailChangeSecurityAlert(
+    @Payload()
+    data: {
+      userId: string;
+      oldEmail: string;
+      newEmail: string;
+      name?: string;
+      requestedAt: string;
+      freezeToken?: string;
+      eventId?: string;
+      sourceEventId?: string;
+    },
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    const sourceEventId = data.sourceEventId || data.eventId;
+
+    const notificationDto: NotificationDto = {
+      UserId: data.userId,
+      title: 'Security Alert: Email Change Requested',
+      body: `An email change was requested for your account to ${data.newEmail}.`,
+      type: NotificationType.ALERT_MESSAGE,
+    };
+
+    try {
+      await this.NotificationsService.createNotification(
+        notificationDto,
+        {
+          email: data.oldEmail,
+          template: 'EmailChangeSecurityAlert',
+          context: {
+            name: data.name || 'User',
+            oldEmail: data.oldEmail,
+            newEmail: data.newEmail,
+            requestedAt: data.requestedAt,
+            freezeToken: data.freezeToken,
+          },
+        },
+        sourceEventId,
+      );
+
+      channel.ack(originalMsg);
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        this.logger.warn(
+          `Unique constraint violation (23505) for event ${sourceEventId}. Treating as already processed.`,
+        );
+        channel.ack(originalMsg);
+        return;
+      }
+
+      this.logger.error(
+        `Failed to process user.email-change.security-alert event for ${data.oldEmail}: ${error.message}`,
+      );
+
+      const isRedelivered = originalMsg.fields.redelivered;
+      channel.nack(originalMsg, false, !isRedelivered);
+    }
+  }
+
+  @EventPattern('user.email-change.success-alert')
+  async handleEmailChangeSuccessAlert(
+    @Payload()
+    data: {
+      userId: string;
+      oldEmail: string;
+      newEmail: string;
+      name?: string;
+      rollbackToken: string;
+      changedAt: string;
+      eventId?: string;
+      sourceEventId?: string;
+    },
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    const sourceEventId = data.sourceEventId || data.eventId;
+
+    const notificationDto: NotificationDto = {
+      UserId: data.userId,
+      title: 'Security Notice: Email Address Changed',
+      body: `Your account email address was changed to ${data.newEmail}. If unauthorized, you can roll back within 30 days.`,
+      type: NotificationType.ALERT_MESSAGE,
+    };
+
+    try {
+      await this.NotificationsService.createNotification(
+        notificationDto,
+        {
+          email: data.oldEmail,
+          template: 'EmailChangeSuccessAlert',
+          context: {
+            name: data.name || 'User',
+            oldEmail: data.oldEmail,
+            newEmail: data.newEmail,
+            rollbackToken: data.rollbackToken,
+            changedAt: data.changedAt,
+          },
+        },
+        sourceEventId,
+      );
+
+      channel.ack(originalMsg);
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        this.logger.warn(
+          `Unique constraint violation (23505) for event ${sourceEventId}. Treating as already processed.`,
+        );
+        channel.ack(originalMsg);
+        return;
+      }
+
+      this.logger.error(
+        `Failed to process user.email-change.success-alert event for ${data.oldEmail}: ${error.message}`,
+      );
+
+      const isRedelivered = originalMsg.fields.redelivered;
+      channel.nack(originalMsg, false, !isRedelivered);
+    }
+  }
+
+  @EventPattern('user.email-change.reverted')
+  async handleEmailChangeReverted(
+    @Payload()
+    data: {
+      userId: string;
+      email: string;
+      name?: string;
+      revertedAt: string;
+      eventId?: string;
+      sourceEventId?: string;
+    },
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    const sourceEventId = data.sourceEventId || data.eventId;
+
+    const notificationDto: NotificationDto = {
+      UserId: data.userId,
+      title: 'Account Restored Successfully',
+      body: `Your account email has been successfully rolled back to ${data.email}. All sessions have been terminated.`,
+      type: NotificationType.ALERT_MESSAGE,
+    };
+
+    try {
+      await this.NotificationsService.createNotification(
+        notificationDto,
+        {
+          email: data.email,
+          template: 'AccountRecoveredAlert',
+          context: {
+            name: data.name || 'User',
+            email: data.email,
+            revertedAt: data.revertedAt,
+          },
+        },
+        sourceEventId,
+      );
+
+      channel.ack(originalMsg);
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        this.logger.warn(
+          `Unique constraint violation (23505) for event ${sourceEventId}. Treating as already processed.`,
+        );
+        channel.ack(originalMsg);
+        return;
+      }
+
+      this.logger.error(
+        `Failed to process user.email-change.reverted event for ${data.email}: ${error.message}`,
+      );
+
+      const isRedelivered = originalMsg.fields.redelivered;
+      channel.nack(originalMsg, false, !isRedelivered);
+    }
+  }
+
+  @EventPattern('user.email-change.success')
+  async handleEmailChangeSuccess(
+    @Payload()
+    data: {
+      userId: string;
+      oldEmail: string;
+      newEmail: string;
+      name?: string;
+      changedAt: string;
+      eventId?: string;
+      sourceEventId?: string;
+    },
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    const sourceEventId = data.sourceEventId || data.eventId;
+
+    const notificationDto: NotificationDto = {
+      UserId: data.userId,
+      title: 'Email Address Changed Successfully',
+      body: `Your account email address has been updated to ${data.newEmail}.`,
+      type: NotificationType.ALERT_MESSAGE,
+    };
+
+    try {
+      await this.NotificationsService.createNotification(
+        notificationDto,
+        undefined,
+        sourceEventId,
+      );
+
+      channel.ack(originalMsg);
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        this.logger.warn(
+          `Unique constraint violation (23505) for event ${sourceEventId}. Treating as already processed.`,
+        );
+        channel.ack(originalMsg);
+        return;
+      }
+
+      this.logger.error(
+        `Failed to process user.email-change.success event for user ${data.userId}: ${error.message}`,
+      );
+
+      const isRedelivered = originalMsg.fields.redelivered;
+      channel.nack(originalMsg, false, !isRedelivered);
+    }
+  }
 }
 

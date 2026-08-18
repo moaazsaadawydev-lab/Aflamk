@@ -12,6 +12,10 @@ service UsersService {
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {}
   rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordResponse) {}
   rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {}
+  rpc RequestChangeEmail(RequestChangeEmailRequest) returns (RequestChangeEmailResponse) {}
+  rpc ConfirmChangeEmail(ConfirmChangeEmailRequest) returns (ConfirmChangeEmailResponse) {}
+  rpc FreezeAccount(FreezeAccountRequest) returns (FreezeAccountResponse) {}
+  rpc RollbackEmail(RollbackEmailRequest) returns (RollbackEmailResponse) {}
 }
 
 message CropData {
@@ -143,5 +147,44 @@ message ResetPasswordRequest {
 message ResetPasswordResponse {
   string message = 1;
   bool success = 2;
+}
+
+message RequestChangeEmailRequest {
+  string user_id = 1;
+  string current_password = 2;
+  string new_email = 3;
+}
+
+message RequestChangeEmailResponse {
+  string message = 1;
+  bool success = 2;
+}
+
+message ConfirmChangeEmailRequest {
+  string user_id = 1;
+  string code = 2;
+}
+
+message ConfirmChangeEmailResponse {
+  string message = 1;
+  bool success = 2;
+}
+
+message FreezeAccountRequest {
+  string token = 1;
+}
+
+message FreezeAccountResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message RollbackEmailRequest {
+  string token = 1;
+}
+
+message RollbackEmailResponse {
+  bool success = 1;
+  string message = 2;
 }
 

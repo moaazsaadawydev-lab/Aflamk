@@ -13,6 +13,10 @@ import {
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  RequestEmailChangeDto,
+  ConfirmEmailChangeDto,
+  FreezeAccountDto,
+  RollbackEmailDto,
 } from '@booking-ticket-system/DTOs';
 import { Users } from '@booking-ticket-system/Entities';
 import { ChangePasswordRateLimitGuard } from '@booking-ticket-system/Guards';
@@ -93,7 +97,6 @@ export class AuthProvider implements OnModuleInit {
     }
   }
 
-
   async refresh(refreshToken: string, response: Response) {
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token is required');
@@ -129,8 +132,7 @@ export class AuthProvider implements OnModuleInit {
     return {
       success: result?.success ?? true,
       message:
-        result?.message ||
-        'Password reset code has been sent to your email.',
+        result?.message || 'Password reset code has been sent to your email.',
     };
   }
 
@@ -151,6 +153,92 @@ export class AuthProvider implements OnModuleInit {
       message:
         result?.message ||
         'Password has been reset successfully. Please log in with your new password.',
+    };
+  }
+
+  async requestChangeEmail(user: Users, body: RequestEmailChangeDto) {
+    const result: any = await lastValueFrom(
+      this.usersService.RequestChangeEmail({
+        user_id: user?.id,
+        current_password: body.currentPassword,
+        new_email: body.newEmail,
+      }),
+    );
+
+    return {
+      success: result?.success ?? true,
+      message: result?.message || 'Verification code sent to your new email.',
+    };
+  }
+
+  async confirmChangeEmail(
+    user: Users,
+    body: ConfirmEmailChangeDto,
+    response: Response,
+  ) {
+    const result: any = await lastValueFrom(
+      this.usersService.ConfirmChangeEmail({
+        user_id: user?.id,
+        code: body.code,
+      }),
+    );
+
+    response.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/v1/auth/users/refresh',
+    });
+
+    return {
+      success: result?.success ?? true,
+      message:
+        result?.message ||
+        'Email changed successfully. Please log in again with your new email.',
+    };
+  }
+
+  async freezeAccount(body: FreezeAccountDto, response: Response) {
+    const result: any = await lastValueFrom(
+      this.usersService.FreezeAccount({
+        token: body.token,
+      }),
+    );
+
+    response.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/v1/auth/users/refresh',
+    });
+
+    return {
+      success: result?.success ?? true,
+      message:
+        result?.message ||
+        'Account has been frozen and all active sessions revoked.',
+    };
+  }
+
+  async rollbackEmail(body: RollbackEmailDto, response: Response) {
+    const result: any = await lastValueFrom(
+      this.usersService.RollbackEmail({
+        token: body.token,
+      }),
+    );
+
+    response.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/v1/auth/users/refresh',
+    });
+
+    return {
+      success: result?.success ?? true,
+      message:
+        result?.message ||
+        'Account email has been rolled back successfully. All sessions revoked. Please reset your password.',
     };
   }
 }
