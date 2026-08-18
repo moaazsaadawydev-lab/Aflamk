@@ -51,3 +51,5 @@ uploads
 .geminiignore
 
 crop.html
+
+OAuth-client-secret.json
