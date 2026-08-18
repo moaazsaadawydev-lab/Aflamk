@@ -62,6 +62,58 @@ export class NotificationController {
     }
   }
 
+  @EventPattern('user.account-verification.resend')
+  async handleResendVerificationCode(
+    @Payload()
+    data: {
+      userId: string;
+      email: string;
+      name: string;
+      code: string | number;
+      dto: NotificationDto;
+      eventId?: string;
+      sourceEventId?: string;
+    },
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    const sourceEventId = data.eventId;
+
+    try {
+      await this.NotificationsService.createNotification(
+        data.dto,
+        {
+          email: data.email,
+          template: 'ActiveYourEmail',
+          context: {
+            name: data.name,
+            activationCode: data.code,
+          },
+        },
+        sourceEventId,
+      );
+
+      channel.ack(originalMsg);
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        this.logger.warn(
+          `Unique constraint violation (23505) for event ${sourceEventId}. Treating as already processed.`,
+        );
+        channel.ack(originalMsg);
+        return;
+      }
+
+      this.logger.error(
+        `Failed to process user.account-verification.resend event for ${data.email}: ${error.message}`,
+      );
+
+      const isRedelivered = originalMsg.fields.redelivered;
+      channel.nack(originalMsg, false, !isRedelivered);
+    }
+  }
+
   @EventPattern('send_notification')
   async handleSendNotification(
     @Payload()

@@ -237,4 +237,10 @@ export class UsersController {
     const token = data?.token;
     return await this.appService.rollbackEmail(token);
   }
+
+  @GrpcMethod('UsersService', 'ResendVerificationCode')
+  async resendVerificationCode(@Payload() data: any) {
+    const email = data?.email;
+    return await this.appService.resendVerificationCode(email);
+  }
 }

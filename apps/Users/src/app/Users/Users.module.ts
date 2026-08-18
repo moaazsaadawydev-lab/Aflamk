@@ -21,6 +21,7 @@ import {
   ConfirmChangeEmailProvider,
   FreezeAccountProvider,
   RollbackEmailProvider,
+  ResendVerificationCodeProvider,
 } from './Providers';
 
 @Module({
@@ -84,6 +85,7 @@ import {
     ConfirmChangeEmailProvider,
     FreezeAccountProvider,
     RollbackEmailProvider,
+    ResendVerificationCodeProvider,
     SanitizeUserInterceptor,
   ],
   exports: [
@@ -95,6 +97,7 @@ import {
     ConfirmChangeEmailProvider,
     FreezeAccountProvider,
     RollbackEmailProvider,
+    ResendVerificationCodeProvider,
     SanitizeUserInterceptor,
   ],
 })

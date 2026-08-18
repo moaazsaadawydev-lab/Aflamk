@@ -16,6 +16,7 @@ service UsersService {
   rpc ConfirmChangeEmail(ConfirmChangeEmailRequest) returns (ConfirmChangeEmailResponse) {}
   rpc FreezeAccount(FreezeAccountRequest) returns (FreezeAccountResponse) {}
   rpc RollbackEmail(RollbackEmailRequest) returns (RollbackEmailResponse) {}
+  rpc ResendVerificationCode(ResendVerificationCodeRequest) returns (ResendVerificationCodeResponse) {}
 }
 
 message CropData {
@@ -184,6 +185,15 @@ message RollbackEmailRequest {
 }
 
 message RollbackEmailResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ResendVerificationCodeRequest {
+  string email = 1;
+}
+
+message ResendVerificationCodeResponse {
   bool success = 1;
   string message = 2;
 }

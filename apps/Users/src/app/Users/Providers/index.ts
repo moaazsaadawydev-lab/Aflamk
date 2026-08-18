@@ -9,3 +9,4 @@ export * from './email/request-change-email.provider';
 export * from './email/confirm-change-email.provider';
 export * from './email/freeze-account.provider';
 export * from './email/rollback-email.provider';
+export * from './verification/resend-verification-code.provider';

@@ -17,6 +17,7 @@ import {
   ConfirmEmailChangeDto,
   FreezeAccountDto,
   RollbackEmailDto,
+  ResendVerificationCodeDto,
 } from '@booking-ticket-system/DTOs';
 import { Users } from '@booking-ticket-system/Entities';
 import { ChangePasswordRateLimitGuard } from '@booking-ticket-system/Guards';
@@ -223,7 +224,7 @@ export class AuthProvider implements OnModuleInit {
   async rollbackEmail(body: RollbackEmailDto, response: Response) {
     const result: any = await lastValueFrom(
       this.usersService.RollbackEmail({
-        token: body.token,
+        tصoken: body.token,
       }),
     );
 
@@ -239,6 +240,21 @@ export class AuthProvider implements OnModuleInit {
       message:
         result?.message ||
         'Account email has been rolled back successfully. All sessions revoked. Please reset your password.',
+    };
+  }
+
+  async resendVerificationCode(body: ResendVerificationCodeDto) {
+    const result: any = await lastValueFrom(
+      this.usersService.ResendVerificationCode({
+        email: body.email,
+      }),
+    );
+
+    return {
+      success: result?.success ?? true,
+      message:
+        result?.message ||
+        'Verification code resent successfully. Please check your inbox.',
     };
   }
 }

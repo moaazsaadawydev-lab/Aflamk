@@ -28,6 +28,7 @@ import {
   ConfirmEmailChangeDto,
   FreezeAccountDto,
   RollbackEmailDto,
+  ResendVerificationCodeDto,
 } from '@booking-ticket-system/DTOs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -231,5 +232,13 @@ export class ApiGatewayController {
     @Res({ passthrough: true }) response: Response,
   ) {
     return this.authProvider.rollbackEmail({ token }, response);
+  }
+
+  @Post('auth/users/account/resend-verification')
+  @HttpCode(HttpStatus.OK)
+  async resendVerificationCode(
+    @Body() body: ResendVerificationCodeDto,
+  ) {
+    return this.authProvider.resendVerificationCode(body);
   }
 }
