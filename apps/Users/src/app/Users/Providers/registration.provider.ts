@@ -9,6 +9,7 @@ import {
   ImageProfileType,
   NotificationType,
   UserGender,
+  UserStatus,
 } from '@booking-ticket-system/Utils';
 import { RedisService } from '@booking-ticket-system/Redis';
 import * as bcrypt from 'bcryptjs';
@@ -75,7 +76,7 @@ export class RegistrationProvider {
         gender: registerDto.gender as UserGender,
         country: registerDto.country as Country,
         avatarKey: avatarKey,
-        isVerified: false,
+        status: UserStatus.UNVERIFIED,
       });
 
       await queryRunner.manager.save(user);
@@ -171,7 +172,7 @@ export class RegistrationProvider {
       });
     }
 
-    if (user.isVerified) {
+    if (user.status === UserStatus.ACTIVE) {
       throw new RpcException({
         code: status.FAILED_PRECONDITION,
         message: 'User is already verified',
@@ -204,7 +205,8 @@ export class RegistrationProvider {
       });
     }
 
-    user.isVerified = true;
+    user.status = UserStatus.ACTIVE;
+    user.statusChangedAt = new Date();
     await this.userRepository.save(user);
 
     await this.redisService.del(otpKey);

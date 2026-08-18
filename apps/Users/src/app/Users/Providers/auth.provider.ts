@@ -8,10 +8,8 @@ import { status } from '@grpc/grpc-js';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import {
-  AccessPayloadType,
-  RefreshPayloadType,
-} from '@booking-ticket-system/Types';
+import { AccessPayloadType, RefreshPayloadType } from '@booking-ticket-system/Types';
+import { UserStatus } from '@booking-ticket-system/Utils';
 import {
   RedisService,
   SESSION_PREFIX,
@@ -76,10 +74,50 @@ export class AuthProvider {
       });
     }
 
-    if (!user.isVerified) {
+    if (user.status === UserStatus.UNVERIFIED) {
       throw new RpcException({
         code: status.PERMISSION_DENIED,
-        message: 'Please verify your email before logging in',
+        message: 'Please verify your email to activate your account.',
+      });
+    }
+
+    if (user.status === UserStatus.SUSPENDED) {
+      if (user.suspendedUntil && new Date(user.suspendedUntil) <= new Date()) {
+        user.status = UserStatus.ACTIVE;
+        user.statusReason = null;
+        user.suspendedUntil = null;
+        user.statusChangedAt = new Date();
+        await this.userRepository.save(user);
+      } else {
+        const reason = user.statusReason
+          ? `: ${user.statusReason}`
+          : ' due to security hold.';
+        throw new RpcException({
+          code: status.PERMISSION_DENIED,
+          message: `Account is suspended${reason}`,
+        });
+      }
+    }
+
+    if (user.status === UserStatus.BLOCKED) {
+      throw new RpcException({
+        code: status.PERMISSION_DENIED,
+        message:
+          'Account has been permanently blocked due to policy violations.',
+      });
+    }
+
+    if (user.status === UserStatus.DELETED) {
+      throw new RpcException({
+        code: status.NOT_FOUND,
+        message: 'Account not found.',
+      });
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new RpcException({
+        code: status.PERMISSION_DENIED,
+        message: 'Account is not active.',
       });
     }
 
@@ -88,6 +126,8 @@ export class AuthProvider {
     const accessPayload: AccessPayloadType = {
       id: user.id,
       role: user.role,
+      status: user.status,
+      sessionId,
     };
 
     const refreshPayload: RefreshPayloadType = {
@@ -211,7 +251,19 @@ export class AuthProvider {
       });
     }
 
-    const accessPayload: AccessPayloadType = { id: user.id, role: user.role };
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new RpcException({
+        code: status.PERMISSION_DENIED,
+        message: 'Account is not active.',
+      });
+    }
+
+    const accessPayload: AccessPayloadType = {
+      id: user.id,
+      role: user.role,
+      status: user.status,
+      sessionId,
+    };
     const refreshPayload: RefreshPayloadType = {
       id: user.id,
       sessionId,

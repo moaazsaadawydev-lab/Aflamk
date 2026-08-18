@@ -18,6 +18,8 @@ import {
   FreezeAccountDto,
   RollbackEmailDto,
   ResendVerificationCodeDto,
+  UpdateUserStatusDto,
+  LogoutDto,
 } from '@booking-ticket-system/DTOs';
 import { Users } from '@booking-ticket-system/Entities';
 import { ChangePasswordRateLimitGuard } from '@booking-ticket-system/Guards';
@@ -224,7 +226,7 @@ export class AuthProvider implements OnModuleInit {
   async rollbackEmail(body: RollbackEmailDto, response: Response) {
     const result: any = await lastValueFrom(
       this.usersService.RollbackEmail({
-        tصoken: body.token,
+        token: body.token,
       }),
     );
 
@@ -255,6 +257,54 @@ export class AuthProvider implements OnModuleInit {
       message:
         result?.message ||
         'Verification code resent successfully. Please check your inbox.',
+    };
+  }
+
+  async updateUserStatus(targetUserId: string, body: UpdateUserStatusDto) {
+    const result: any = await lastValueFrom(
+      this.usersService.UpdateUserStatus({
+        target_user_id: targetUserId,
+        status: body.status,
+        reason: body.reason,
+        suspended_until: body.suspendedUntil,
+      }),
+    );
+
+    return {
+      success: result?.success ?? true,
+      message: result?.message || 'User status updated successfully.',
+      status: result?.status,
+    };
+  }
+
+  async logout(user: any, response: Response) {
+    const userId = user?.id;
+    const sessionId = user?.sessionId;
+
+    const result: any = await lastValueFrom(
+      this.usersService.Logout({
+        user_id: userId,
+        session_id: sessionId,
+      }),
+    );
+
+    response.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    response.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/v1/auth/users/refresh',
+    });
+
+    return {
+      success: result?.success ?? true,
+      message: result?.message || 'Logged out successfully.',
     };
   }
 }

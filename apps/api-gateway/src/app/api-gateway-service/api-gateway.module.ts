@@ -3,6 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import {
   JwtAuthGuard,
+  RolesGuard,
   ChangePasswordRateLimitGuard,
   ForgotPasswordRateLimitGuard,
   ChangeEmailRateLimitGuard,
@@ -77,6 +78,7 @@ import {
   providers: [
     ApiGatewayService,
     JwtAuthGuard,
+    RolesGuard,
     ChangePasswordRateLimitGuard,
     ForgotPasswordRateLimitGuard,
     ChangeEmailRateLimitGuard,

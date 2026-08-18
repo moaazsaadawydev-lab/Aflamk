@@ -13,3 +13,5 @@ export * from './lib/ConfirmEmailChange.dto';
 export * from './lib/FreezeAccount.dto';
 export * from './lib/RollbackEmail.dto';
 export * from './lib/ResendVerificationCode.dto';
+export * from './lib/UpdateUserStatus.dto';
+export * from './lib/Logout.dto';

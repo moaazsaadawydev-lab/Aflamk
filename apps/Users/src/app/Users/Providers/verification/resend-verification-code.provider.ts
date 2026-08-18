@@ -3,7 +3,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Users, OutboxMessage } from '@booking-ticket-system/Entities';
 import { RedisService } from '@booking-ticket-system/Redis';
-import { NotificationType } from '@booking-ticket-system/Utils';
+import { NotificationType, UserStatus } from '@booking-ticket-system/Utils';
 import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
@@ -52,10 +52,17 @@ export class ResendVerificationCodeProvider {
       });
     }
 
-    if (user.isVerified) {
+    if (user.status === UserStatus.ACTIVE) {
       throw new RpcException({
         code: status.FAILED_PRECONDITION,
         message: 'Account is already verified.',
+      });
+    }
+
+    if (user.status !== UserStatus.UNVERIFIED) {
+      throw new RpcException({
+        code: status.PERMISSION_DENIED,
+        message: 'Cannot send verification code for non-unverified account.',
       });
     }
 

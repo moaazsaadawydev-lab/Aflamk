@@ -190,6 +190,28 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
+  async revokeUserSession(userId: string, sessionId: string): Promise<void> {
+    try {
+      const sessionKey = `${SESSION_PREFIX}${userId}:${sessionId}`;
+      const userSessionsKey = `${USER_SESSIONS_PREFIX}${userId}`;
+
+      const pipeline = this.client.pipeline();
+      pipeline.del(sessionKey);
+      pipeline.del(`${SESSION_PREFIX}${sessionId}`);
+      pipeline.srem(userSessionsKey, sessionId);
+      await pipeline.exec();
+
+      this.logger.log(`Revoked session "${sessionId}" for user: ${userId}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to revoke session "${sessionId}" for user "${userId}": ${
+          (error as Error).message
+        }`,
+      );
+      throw error;
+    }
+  }
+
   async incrementCounter(key: string, ttlSeconds: number): Promise<number> {
     try {
       const count = await this.client.incr(key);

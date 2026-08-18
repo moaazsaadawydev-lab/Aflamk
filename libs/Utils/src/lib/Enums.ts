@@ -1,4 +1,5 @@
 export enum UserRole {
+  SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   ACCOUNTANT = 'accountant',
   MARKETING = 'marketing',
@@ -7,10 +8,11 @@ export enum UserRole {
 }
 
 export enum UserStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  BLOCKED = 'blocked',
-  SUSPENDED = 'suspended',
+  UNVERIFIED = 'UNVERIFIED',
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  BLOCKED = 'BLOCKED',
+  DELETED = 'DELETED',
 }
 
 export enum UserGender {

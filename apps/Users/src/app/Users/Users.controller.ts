@@ -243,4 +243,30 @@ export class UsersController {
     const email = data?.email;
     return await this.appService.resendVerificationCode(email);
   }
+
+  @GrpcMethod('UsersService', 'UpdateUserStatus')
+  async updateUserStatus(@Payload() data: any) {
+    const targetUserId = data?.targetUserId || data?.target_user_id;
+    const status = data?.status;
+    const reason = data?.reason;
+    const suspendedUntil = data?.suspendedUntil || data?.suspended_until;
+
+    return await this.appService.updateUserStatus({
+      targetUserId,
+      status,
+      reason,
+      suspendedUntil,
+    });
+  }
+
+  @GrpcMethod('UsersService', 'Logout')
+  async logout(@Payload() data: any) {
+    const userId = data?.userId || data?.user_id;
+    const sessionId = data?.sessionId || data?.session_id;
+
+    return await this.appService.logout({
+      userId,
+      sessionId,
+    });
+  }
 }

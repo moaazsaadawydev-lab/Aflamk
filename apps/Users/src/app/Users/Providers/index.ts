@@ -10,3 +10,5 @@ export * from './email/confirm-change-email.provider';
 export * from './email/freeze-account.provider';
 export * from './email/rollback-email.provider';
 export * from './verification/resend-verification-code.provider';
+export * from './admin/update-user-status.provider';
+export * from './auth/logout.provider';

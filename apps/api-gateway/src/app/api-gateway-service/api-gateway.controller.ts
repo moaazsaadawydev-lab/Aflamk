@@ -14,6 +14,7 @@ import {
   UseGuards,
   Req,
   Query,
+  Param,
 } from '@nestjs/common';
 import {
   LoginDto,
@@ -29,18 +30,21 @@ import {
   FreezeAccountDto,
   RollbackEmailDto,
   ResendVerificationCodeDto,
+  UpdateUserStatusDto,
 } from '@booking-ticket-system/DTOs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Users } from '@booking-ticket-system/Entities';
 import { Request, Response } from 'express';
+import { UserRole } from '@booking-ticket-system/Utils';
 import {
   JwtAuthGuard,
+  RolesGuard,
   ChangePasswordRateLimitGuard,
   ForgotPasswordRateLimitGuard,
   ChangeEmailRateLimitGuard,
 } from '@booking-ticket-system/Guards';
-import { CurrentUser } from '@booking-ticket-system/Decorators';
+import { CurrentUser, Roles } from '@booking-ticket-system/Decorators';
 import { TransformResponseInterceptor } from '@booking-ticket-system/Common';
 
 import {
@@ -240,5 +244,26 @@ export class ApiGatewayController {
     @Body() body: ResendVerificationCodeDto,
   ) {
     return this.authProvider.resendVerificationCode(body);
+  }
+
+  @Patch('admin/users/:id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async updateUserStatus(
+    @Param('id') id: string,
+    @Body() body: UpdateUserStatusDto,
+  ) {
+    return this.authProvider.updateUserStatus(id, body);
+  }
+
+  @Post('auth/users/logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async logout(
+    @CurrentUser() user: any,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authProvider.logout(user, response);
   }
 }

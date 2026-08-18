@@ -17,6 +17,17 @@ service UsersService {
   rpc FreezeAccount(FreezeAccountRequest) returns (FreezeAccountResponse) {}
   rpc RollbackEmail(RollbackEmailRequest) returns (RollbackEmailResponse) {}
   rpc ResendVerificationCode(ResendVerificationCodeRequest) returns (ResendVerificationCodeResponse) {}
+  rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse) {}
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+}
+
+enum UserStatus {
+  USER_STATUS_UNSPECIFIED = 0;
+  USER_STATUS_UNVERIFIED = 1;
+  USER_STATUS_ACTIVE = 2;
+  USER_STATUS_SUSPENDED = 3;
+  USER_STATUS_BLOCKED = 4;
+  USER_STATUS_DELETED = 5;
 }
 
 message CropData {
@@ -81,6 +92,10 @@ message CurrentUserResponse {
   string gender = 5;
   string country = 6;
   int32 age = 7;
+  string status = 8;
+  optional string status_reason = 9;
+  optional string suspended_until = 10;
+  optional string status_changed_at = 11;
 }
 
 message RefreshTokenRequest {
@@ -113,6 +128,10 @@ message UpdateProfileResponse {
   string country = 4;
   int32 age = 5;
   optional string avatar_key = 6;
+  string status = 7;
+  optional string status_reason = 8;
+  optional string suspended_until = 9;
+  optional string status_changed_at = 10;
 }
 
 message ChangePasswordRequest {
@@ -194,6 +213,29 @@ message ResendVerificationCodeRequest {
 }
 
 message ResendVerificationCodeResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UpdateUserStatusRequest {
+  string target_user_id = 1;
+  string status = 2;
+  optional string reason = 3;
+  optional string suspended_until = 4;
+}
+
+message UpdateUserStatusResponse {
+  bool success = 1;
+  string message = 2;
+  string status = 3;
+}
+
+message LogoutRequest {
+  string user_id = 1;
+  string session_id = 2;
+}
+
+message LogoutResponse {
   bool success = 1;
   string message = 2;
 }

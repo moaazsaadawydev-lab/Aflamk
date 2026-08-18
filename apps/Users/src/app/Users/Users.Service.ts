@@ -17,6 +17,10 @@ import {
   FreezeAccountProvider,
   RollbackEmailProvider,
   ResendVerificationCodeProvider,
+  UpdateUserStatusProvider,
+  LogoutProvider,
+  UpdateUserStatusPayload,
+  LogoutPayload,
   ChangePasswordPayload,
   ResetPasswordPayload,
   RequestChangeEmailPayload,
@@ -38,6 +42,8 @@ export class UsersService {
     private readonly freezeAccountProvider: FreezeAccountProvider,
     private readonly rollbackEmailProvider: RollbackEmailProvider,
     private readonly resendVerificationCodeProvider: ResendVerificationCodeProvider,
+    private readonly updateUserStatusProvider: UpdateUserStatusProvider,
+    private readonly logoutProvider: LogoutProvider,
   ) {}
 
   register(registerDto: any) {
@@ -94,6 +100,14 @@ export class UsersService {
 
   resendVerificationCode(email: string) {
     return this.resendVerificationCodeProvider.execute({ email });
+  }
+
+  updateUserStatus(payload: UpdateUserStatusPayload) {
+    return this.updateUserStatusProvider.execute(payload);
+  }
+
+  logout(payload: LogoutPayload) {
+    return this.logoutProvider.execute(payload);
   }
 
   refresh(refreshToken: string) {
