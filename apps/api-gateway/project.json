@@ -74,6 +74,13 @@
           "buildTarget": "api-gateway:build:production"
         }
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --config apps/api-gateway/jest.config.ts --runInBand",
+        "cwd": "{workspaceRoot}"
+      }
     }
   },
   "tags": []

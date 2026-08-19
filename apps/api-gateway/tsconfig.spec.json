@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "es2021",
+    "types": ["jest", "node"]
+  },
+  "include": ["test/**/*.ts", "src/**/*.ts"]
+}
