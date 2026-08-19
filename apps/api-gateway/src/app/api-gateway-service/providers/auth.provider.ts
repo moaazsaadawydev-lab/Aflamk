@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import {
   LoginDto,
   VerifyEmailDto,
@@ -19,10 +19,8 @@ import {
   RollbackEmailDto,
   ResendVerificationCodeDto,
   UpdateUserStatusDto,
-  LogoutDto,
 } from '@booking-ticket-system/DTOs';
 import { Users } from '@booking-ticket-system/Entities';
-import { ChangePasswordRateLimitGuard } from '@booking-ticket-system/Guards';
 
 @Injectable()
 export class AuthProvider implements OnModuleInit {

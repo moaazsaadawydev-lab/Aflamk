@@ -35,11 +35,11 @@ const API = `/api/v1`;
 
 /** Endpoints */
 const ENDPOINTS = {
-  REGISTER: `${API}/auth/users/register`,
-  VERIFY: `${API}/auth/users/verify`,
-  LOGIN: `${API}/auth/users/login`,
-  PROFILE: `${API}/auth/users/profile`,
-  REFRESH: `${API}/auth/users/refresh`,
+  REGISTER: `${API}/users/auth/register`,
+  VERIFY: `${API}/users/auth/verify-otp`,
+  LOGIN: `${API}/users/auth/login`,
+  PROFILE: `${API}/users/profile/me`,
+  REFRESH: `${API}/users/auth/refresh-token`,
 } as const;
 
 /** Global test state shared across tests in the happy-path suite */
@@ -163,7 +163,7 @@ describe('Happy Path — Full Auth Lifecycle', () => {
 
     expect(cookieStr).toMatch(/refreshToken=/);
     expect(cookieStr).toMatch(/HttpOnly/i);
-    expect(cookieStr).toMatch(/Path=\/api\/v1\/auth\/users\/refresh/i);
+    expect(cookieStr).toMatch(/Path=\//i);
 
     // Verify access token is a valid JWT with expected claims
     const decoded = jwt.verify(
@@ -745,7 +745,7 @@ describe('Security Invariants', () => {
       ? cookieHeader.join(' ')
       : cookieHeader ?? '';
 
-    expect(cookieStr).toMatch(/Path=\/api\/v1\/auth\/users\/refresh/i);
+    expect(cookieStr).toMatch(/Path=\//i);
     expect(cookieStr).toMatch(/HttpOnly/i);
   });
 

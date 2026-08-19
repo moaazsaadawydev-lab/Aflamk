@@ -10,17 +10,20 @@ import {
 } from '@booking-ticket-system/Guards';
 import { JwtModule } from '@nestjs/jwt';
 import { RedisModule } from '@booking-ticket-system/Redis';
-
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StorageModule } from '@booking-ticket-system/Storage';
 import { PassportModule } from '@nestjs/passport';
-import { ApiGatewayController } from './api-gateway.controller';
-import { ApiGatewayService } from './api-gateway.service';
+import {
+  UsersAuthController,
+  UsersRegistrationController,
+  UsersAccountController,
+  UsersProfileController,
+  UsersAdminController,
+} from './Controllers/Users';
 import {
   AuthProvider,
   RegistrationProvider,
   UserProfileProvider,
-  NotificationProvider,
   GoogleStrategy,
 } from './providers';
 
@@ -54,18 +57,6 @@ import {
           },
         }),
       },
-      {
-        name: 'NOTIFICATION_SERVICE',
-        inject: [ConfigService],
-        useFactory: (config: ConfigService) => ({
-          transport: Transport.RMQ,
-          options: {
-            urls: [config.get<string>('MQ_URL')],
-            queue: 'notification_queue',
-            queueOptions: { durable: true },
-          },
-        }),
-      },
     ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -77,9 +68,14 @@ import {
       }),
     }),
   ],
-  controllers: [ApiGatewayController],
+  controllers: [
+    UsersAuthController,
+    UsersRegistrationController,
+    UsersAccountController,
+    UsersProfileController,
+    UsersAdminController,
+  ],
   providers: [
-    ApiGatewayService,
     JwtAuthGuard,
     RolesGuard,
     ChangePasswordRateLimitGuard,
@@ -88,7 +84,6 @@ import {
     AuthProvider,
     RegistrationProvider,
     UserProfileProvider,
-    NotificationProvider,
     GoogleStrategy,
   ],
 })
