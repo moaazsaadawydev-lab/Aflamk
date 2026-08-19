@@ -12,3 +12,4 @@ export * from './email/rollback-email.provider';
 export * from './verification/resend-verification-code.provider';
 export * from './admin/update-user-status.provider';
 export * from './auth/logout.provider';
+export * from './auth/google-login.provider';

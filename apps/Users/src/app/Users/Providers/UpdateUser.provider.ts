@@ -41,7 +41,7 @@ export class UpdateUserProvider {
       const {
         name,
         country,
-        age,
+        birthDate,
         tempKey,
         cropX,
         cropY,
@@ -56,8 +56,8 @@ export class UpdateUserProvider {
       if (country !== undefined) {
         user.country = country;
       }
-      if (age !== undefined) {
-        user.age = age;
+      if (birthDate !== undefined) {
+        user.birthDate = birthDate ? new Date(birthDate) : null;
       }
 
       if (tempKey) {

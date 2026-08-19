@@ -59,6 +59,7 @@ export class RegistrationProvider implements OnModuleInit {
     try {
       const registerPayload = {
         ...body,
+        birth_date: body.birthDate || (body as any).birth_date,
         temp_object_key: objectKey,
       };
 

@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsEmail,
+  IsDateString,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -24,9 +25,9 @@ export class RegisterDto {
   @IsNotEmpty()
   country!: string;
 
-  @IsNumber()
-  @IsNotEmpty()
-  age!: number;
+  @IsOptional()
+  @IsDateString({}, { message: 'birthDate must be a valid date string (YYYY-MM-DD)' })
+  birthDate?: string;
 
   @IsString()
   @IsNotEmpty()

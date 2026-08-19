@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEnum, IsInt, Min, Max, IsNumber } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsNumber, IsDateString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Country } from '@booking-ticket-system/Utils';
 
@@ -12,11 +12,8 @@ export class UpdateUserProfileDto {
   country?: Country;
 
   @IsOptional()
-  @Transform(({ value }) => (value !== undefined && value !== null && value !== '' ? Number(value) : undefined))
-  @IsInt()
-  @Min(1)
-  @Max(120)
-  age?: number;
+  @IsDateString({}, { message: 'birthDate must be a valid date string (YYYY-MM-DD)' })
+  birthDate?: string;
 
   @IsOptional()
   @IsString()

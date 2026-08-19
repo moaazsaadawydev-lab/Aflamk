@@ -44,12 +44,8 @@ export class RegistrationProvider {
       });
     }
 
-    if (registerDto.age < 18) {
-      throw new RpcException({
-        code: status.INVALID_ARGUMENT,
-        message: 'You must be at least 18 years old',
-      });
-    }
+    const rawBirthDate = registerDto.birthDate || (registerDto as any).birth_date;
+    const birthDate = rawBirthDate ? new Date(rawBirthDate) : null;
 
     const code = randomInt(100000, 1000000).toString();
     const passwordHash = await bcrypt.hash(
@@ -72,7 +68,7 @@ export class RegistrationProvider {
         name: registerDto.name,
         email: normalizedEmail,
         password: passwordHash,
-        age: registerDto.age,
+        birthDate: birthDate,
         gender: registerDto.gender as UserGender,
         country: registerDto.country as Country,
         avatarKey: avatarKey,
@@ -145,7 +141,12 @@ export class RegistrationProvider {
           avatarKey: user.avatarKey,
           gender: user.gender,
           country: user.country,
-          age: user.age,
+          birth_date: user.birthDate
+            ? user.birthDate instanceof Date
+              ? user.birthDate.toISOString().split('T')[0]
+              : String(user.birthDate)
+            : '',
+          status: user.status,
         },
       };
     } catch (error) {

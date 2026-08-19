@@ -24,6 +24,7 @@ import {
   ResendVerificationCodeProvider,
   UpdateUserStatusProvider,
   LogoutProvider,
+  GoogleLoginProvider,
 } from './Providers';
 
 @Module({
@@ -90,6 +91,7 @@ import {
     ResendVerificationCodeProvider,
     UpdateUserStatusProvider,
     LogoutProvider,
+    GoogleLoginProvider,
     SanitizeUserInterceptor,
   ],
   exports: [
@@ -104,6 +106,7 @@ import {
     ResendVerificationCodeProvider,
     UpdateUserStatusProvider,
     LogoutProvider,
+    GoogleLoginProvider,
     SanitizeUserInterceptor,
   ],
 })

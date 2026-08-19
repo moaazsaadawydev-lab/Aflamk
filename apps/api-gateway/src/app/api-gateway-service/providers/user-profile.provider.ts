@@ -66,12 +66,8 @@ export class UserProfileProvider implements OnModuleInit {
           temp_key: tempKey,
           tempKey: tempKey,
           ...body,
-          age:
-            body.age !== undefined &&
-            body.age !== null &&
-            (body.age as any) !== ''
-              ? Number(body.age)
-              : undefined,
+          birth_date: body.birthDate || (body as any).birth_date,
+          birthDate: body.birthDate || (body as any).birth_date,
         }),
       );
     } catch (error) {

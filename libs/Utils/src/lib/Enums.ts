@@ -15,6 +15,11 @@ export enum UserStatus {
   DELETED = 'DELETED',
 }
 
+export enum AuthProviderType {
+  LOCAL = 'LOCAL',
+  GOOGLE = 'GOOGLE',
+}
+
 export enum UserGender {
   MALE = 'male',
   FEMALE = 'female',

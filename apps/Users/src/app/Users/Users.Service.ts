@@ -19,8 +19,10 @@ import {
   ResendVerificationCodeProvider,
   UpdateUserStatusProvider,
   LogoutProvider,
+  GoogleLoginProvider,
   UpdateUserStatusPayload,
   LogoutPayload,
+  GoogleLoginPayload,
   ChangePasswordPayload,
   ResetPasswordPayload,
   RequestChangeEmailPayload,
@@ -44,6 +46,7 @@ export class UsersService {
     private readonly resendVerificationCodeProvider: ResendVerificationCodeProvider,
     private readonly updateUserStatusProvider: UpdateUserStatusProvider,
     private readonly logoutProvider: LogoutProvider,
+    private readonly googleLoginProvider: GoogleLoginProvider,
   ) {}
 
   register(registerDto: any) {
@@ -108,6 +111,10 @@ export class UsersService {
 
   logout(payload: LogoutPayload) {
     return this.logoutProvider.execute(payload);
+  }
+
+  googleLogin(payload: GoogleLoginPayload) {
+    return this.googleLoginProvider.execute(payload);
   }
 
   refresh(refreshToken: string) {

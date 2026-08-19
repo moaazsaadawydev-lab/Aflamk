@@ -37,6 +37,8 @@ import { memoryStorage } from 'multer';
 import { Users } from '@booking-ticket-system/Entities';
 import { Request, Response } from 'express';
 import { UserRole } from '@booking-ticket-system/Utils';
+import { AuthGuard } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
 import {
   JwtAuthGuard,
   RolesGuard,
@@ -62,6 +64,7 @@ export class ApiGatewayController {
     private readonly registrationProvider: RegistrationProvider,
     private readonly userProfileProvider: UserProfileProvider,
     private readonly notificationProvider: NotificationProvider,
+    private readonly configService: ConfigService,
   ) {}
 
   @Post('auth/users/register')
@@ -265,5 +268,30 @@ export class ApiGatewayController {
     @Res({ passthrough: true }) response: Response,
   ) {
     return this.authProvider.logout(user, response);
+  }
+
+  @Get('auth/google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // Initiates Google OAuth redirect via passport-google-oauth20
+  }
+
+  @Get('auth/google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthCallback(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const ipAddress = req.ip || req.socket.remoteAddress || '';
+    const googleUser = (req as any).user;
+
+    await this.authProvider.googleLogin(googleUser, ipAddress, userAgent, res);
+
+    const redirectUrl =
+      this.configService.get<string>('FRONTEND_REDIRECT_URL') ||
+      'http://localhost:4200';
+
+    return res.redirect(redirectUrl);
   }
 }

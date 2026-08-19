@@ -13,6 +13,7 @@ import { RedisModule } from '@booking-ticket-system/Redis';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StorageModule } from '@booking-ticket-system/Storage';
+import { PassportModule } from '@nestjs/passport';
 import { ApiGatewayController } from './api-gateway.controller';
 import { ApiGatewayService } from './api-gateway.service';
 import {
@@ -20,10 +21,12 @@ import {
   RegistrationProvider,
   UserProfileProvider,
   NotificationProvider,
+  GoogleStrategy,
 } from './providers';
 
 @Module({
   imports: [
+    PassportModule.register({ defaultStrategy: 'google' }),
     StorageModule,
     RedisModule,
     ConfigModule.forRoot({
@@ -86,6 +89,7 @@ import {
     RegistrationProvider,
     UserProfileProvider,
     NotificationProvider,
+    GoogleStrategy,
   ],
 })
 export class ApiGatewayModule {}

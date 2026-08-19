@@ -67,7 +67,8 @@ export class UsersController {
       id?: string;
       name?: string;
       country?: any;
-      age?: number;
+      birthDate?: string;
+      birth_date?: string;
       tempKey?: string;
       temp_key?: string;
       cropX?: number;
@@ -95,7 +96,7 @@ export class UsersController {
     const updateDto: UpdateUserProfileDto = {
       name: data.name,
       country: data.country,
-      age: data.age ? Number(data.age) : undefined,
+      birthDate: data.birthDate || data.birth_date,
       tempKey: data.tempKey || data.temp_key,
       cropX: data.cropX ?? data.crop_x,
       cropY: data.cropY ?? data.crop_y,
@@ -267,6 +268,27 @@ export class UsersController {
     return await this.appService.logout({
       userId,
       sessionId,
+    });
+  }
+
+  @GrpcMethod('UsersService', 'GoogleLogin')
+  async googleLogin(@Payload() data: any) {
+    const googleId = data?.googleId || data?.google_id;
+    const email = data?.email;
+    const name = data?.name;
+    const avatarUrl = data?.avatarUrl || data?.avatar_url;
+    const birthDate = data?.birthDate || data?.birth_date;
+    const userAgent = data?.userAgent || data?.user_agent;
+    const ipAddress = data?.ipAddress || data?.ip_address;
+
+    return await this.appService.googleLogin({
+      googleId,
+      email,
+      name,
+      avatarUrl,
+      birthDate,
+      userAgent,
+      ipAddress,
     });
   }
 }

@@ -12,11 +12,12 @@ import {
   UserGender,
   UserRole,
   UserStatus,
+  AuthProviderType,
 } from '@booking-ticket-system/Utils';
 import { TIMESTAMP } from '@booking-ticket-system/Constants';
 import type { UserEmailHistory } from './UserEmailHistory.entity';
 
-export { UserStatus };
+export { UserStatus, AuthProviderType };
 
 @Entity()
 export class Users {
@@ -29,28 +30,43 @@ export class Users {
   @Column({ type: 'varchar', length: 255, nullable: false, unique: true })
   email!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
-  password!: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  password!: string | null;
 
-  @Column({ type: 'int', nullable: false })
-  age!: number;
+  @Column({ type: 'date', nullable: true })
+  birthDate!: Date | null;
 
   @Column({
     type: 'enum',
     enum: UserGender,
-    nullable: false,
+    nullable: true,
   })
-  gender!: UserGender;
+  gender!: UserGender | null;
 
   @Column({
     type: 'enum',
     enum: Country,
-    nullable: false,
+    nullable: true,
   })
-  country!: Country;
+  country!: Country | null;
 
   @Column({ type: 'varchar', nullable: true, default: null })
   avatarKey!: string | null;
+
+  @Column({ type: 'text', nullable: true, default: null })
+  avatarUrl?: string | null;
+
+  @Index()
+  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
+  googleId!: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: AuthProviderType,
+    default: AuthProviderType.LOCAL,
+    nullable: false,
+  })
+  provider!: AuthProviderType;
 
   @Column({
     type: 'enum',

@@ -41,7 +41,13 @@ Thumbs.db
 .claude/worktrees
 .claude/settings.local.json
 
+# Environment & Secrets
+.env
+.env.*
+*.env
 libs/env
+OAuth-client-secret.json
+client_secret*.json
 
 # Next.js
 .next
@@ -51,5 +57,3 @@ uploads
 .geminiignore
 
 crop.html
-
-OAuth-client-secret.json

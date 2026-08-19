@@ -58,7 +58,7 @@ export class AuthProvider implements OnModuleInit {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        path: '/api/v1/auth/users/refresh',
+        path: '/',
       });
     }
 
@@ -117,7 +117,7 @@ export class AuthProvider implements OnModuleInit {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/api/v1/auth/users/refresh',
+      path: '/',
     });
 
     return {
@@ -186,11 +186,18 @@ export class AuthProvider implements OnModuleInit {
       }),
     );
 
+    response.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
     response.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/api/v1/auth/users/refresh',
+      path: '/',
     });
 
     return {
@@ -208,11 +215,18 @@ export class AuthProvider implements OnModuleInit {
       }),
     );
 
+    response.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
     response.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/api/v1/auth/users/refresh',
+      path: '/',
     });
 
     return {
@@ -230,11 +244,18 @@ export class AuthProvider implements OnModuleInit {
       }),
     );
 
+    response.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
     response.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/api/v1/auth/users/refresh',
+      path: '/',
     });
 
     return {
@@ -299,12 +320,61 @@ export class AuthProvider implements OnModuleInit {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/api/v1/auth/users/refresh',
+      path: '/',
     });
 
     return {
       success: result?.success ?? true,
       message: result?.message || 'Logged out successfully.',
+    };
+  }
+
+  async googleLogin(
+    googleUser: any,
+    ipAddress: string,
+    userAgent: string,
+    response: Response,
+  ) {
+    const result: any = await lastValueFrom(
+      this.usersService.GoogleLogin({
+        google_id: googleUser?.googleId,
+        email: googleUser?.email,
+        name: googleUser?.name,
+        avatar_url: googleUser?.avatarUrl,
+        user_agent: userAgent,
+        ip_address: ipAddress,
+      }),
+    );
+
+    const isProduction = process.env.NODE_ENV === 'production';
+    const accessToken = result.access_token || result.accessToken;
+    const refreshToken = result.refresh_token || result.refreshToken;
+
+    if (accessToken) {
+      response.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: 15 * 60 * 1000,
+        path: '/',
+      });
+    }
+
+    if (refreshToken) {
+      response.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Google authentication successful',
+      accessToken,
+      refreshToken,
     };
   }
 }
