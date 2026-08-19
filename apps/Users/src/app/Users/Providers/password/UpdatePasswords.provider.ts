@@ -10,7 +10,7 @@ import * as bcrypt from 'bcryptjs';
 
 export interface ChangePasswordPayload {
   userId: string;
-  oldPassword: string;
+  oldPassword?: string;
   newPassword: string;
   confirmPassword?: string;
   userAgent?: string;
@@ -49,24 +49,38 @@ export class UpdatePasswordsProvider {
         });
       }
 
-      const isCurrentPasswordCorrect = await bcrypt.compare(
-        oldPassword,
-        user.password,
-      );
+      // If user already has a password, verify oldPassword
+      if (
+        user.password !== null &&
+        user.password !== undefined &&
+        user.password !== ''
+      ) {
+        if (!oldPassword) {
+          throw new RpcException({
+            code: status.INVALID_ARGUMENT,
+            message: 'Current password is required',
+          });
+        }
 
-      if (!isCurrentPasswordCorrect) {
-        throw new RpcException({
-          code: status.UNAUTHENTICATED,
-          message: 'Current password is incorrect',
-        });
-      }
+        const isCurrentPasswordCorrect = await bcrypt.compare(
+          oldPassword,
+          user.password,
+        );
 
-      const isSamePassword = await bcrypt.compare(newPassword, user.password);
-      if (isSamePassword) {
-        throw new RpcException({
-          code: status.INVALID_ARGUMENT,
-          message: 'New password cannot be the same as current password',
-        });
+        if (!isCurrentPasswordCorrect) {
+          throw new RpcException({
+            code: status.UNAUTHENTICATED,
+            message: 'Current password is incorrect',
+          });
+        }
+
+        const isSamePassword = await bcrypt.compare(newPassword, user.password);
+        if (isSamePassword) {
+          throw new RpcException({
+            code: status.INVALID_ARGUMENT,
+            message: 'New password cannot be the same as current password',
+          });
+        }
       }
 
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);

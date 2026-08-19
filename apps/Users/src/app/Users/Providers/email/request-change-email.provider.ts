@@ -11,7 +11,7 @@ import { randomInt, randomBytes, createHash } from 'crypto';
 
 export interface RequestChangeEmailPayload {
   userId: string;
-  currentPassword: string;
+  currentPassword?: string;
   newEmail: string;
 }
 
@@ -37,13 +37,6 @@ export class RequestChangeEmailProvider {
       throw new RpcException({
         code: status.INVALID_ARGUMENT,
         message: 'User ID is required',
-      });
-    }
-
-    if (!currentPassword) {
-      throw new RpcException({
-        code: status.INVALID_ARGUMENT,
-        message: 'Current password is required',
       });
     }
 
@@ -89,17 +82,30 @@ export class RequestChangeEmailProvider {
       });
     }
 
-    // 3. Re-authenticate with currentPassword
-    const isPasswordValid = await bcrypt.compare(
-      currentPassword,
-      user.password,
-    );
+    // 3. Re-authenticate with currentPassword if user has a password set
+    if (
+      user.password !== null &&
+      user.password !== undefined &&
+      user.password !== ''
+    ) {
+      if (!currentPassword) {
+        throw new RpcException({
+          code: status.INVALID_ARGUMENT,
+          message: 'Current password is required',
+        });
+      }
 
-    if (!isPasswordValid) {
-      throw new RpcException({
-        code: status.UNAUTHENTICATED,
-        message: 'Invalid current password',
-      });
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
+
+      if (!isPasswordValid) {
+        throw new RpcException({
+          code: status.UNAUTHENTICATED,
+          message: 'Invalid current password',
+        });
+      }
     }
 
     // 4. Validate new email is not current email

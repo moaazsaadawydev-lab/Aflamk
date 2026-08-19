@@ -1,6 +1,7 @@
 import {
   IsString,
   IsNotEmpty,
+  IsOptional,
   MinLength,
   Matches,
   ValidatorConstraint,
@@ -28,6 +29,7 @@ export class IsNotMatchConstraint implements ValidatorConstraintInterface {
   validate(propertyValue: any, args: ValidationArguments) {
     const [relatedPropertyName] = args.constraints;
     const relatedValue = (args.object as any)[relatedPropertyName];
+    if (!relatedValue) return true;
     return propertyValue !== relatedValue;
   }
 
@@ -38,9 +40,9 @@ export class IsNotMatchConstraint implements ValidatorConstraintInterface {
 }
 
 export class ChangePasswordDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'Current password is required' })
-  oldPassword!: string;
+  oldPassword?: string;
 
   @IsString()
   @IsNotEmpty({ message: 'New password is required' })

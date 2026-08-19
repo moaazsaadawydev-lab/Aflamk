@@ -137,7 +137,7 @@ message UpdateProfileResponse {
 
 message ChangePasswordRequest {
   string user_id = 1;
-  string old_password = 2;
+  optional string old_password = 2;
   string new_password = 3;
   string confirm_password = 4;
   optional string user_agent = 5;
@@ -172,7 +172,7 @@ message ResetPasswordResponse {
 
 message RequestChangeEmailRequest {
   string user_id = 1;
-  string current_password = 2;
+  optional string current_password = 2;
   string new_email = 3;
 }
 

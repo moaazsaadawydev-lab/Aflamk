@@ -1,10 +1,10 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class RequestEmailChangeDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'Current password is required' })
-  currentPassword!: string;
+  currentPassword?: string;
 
   @IsEmail({}, { message: 'Invalid email address format' })
   @IsNotEmpty({ message: 'New email is required' })

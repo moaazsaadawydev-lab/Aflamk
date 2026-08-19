@@ -10,7 +10,7 @@ import { RedisService } from '@booking-ticket-system/Redis';
 import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
-import { UserStatus } from '@booking-ticket-system/Utils';
+import { AuthProviderType, UserStatus } from '@booking-ticket-system/Utils';
 import { randomBytes, createHash } from 'crypto';
 
 export interface ConfirmChangeEmailPayload {
@@ -143,6 +143,11 @@ export class ConfirmChangeEmailProvider {
       user.email = normalizedNewEmail;
       user.status = UserStatus.ACTIVE;
       user.statusChangedAt = new Date();
+
+      if (user.googleId) {
+        user.googleId = null;
+        user.provider = AuthProviderType.LOCAL;
+      }
 
       await queryRunner.manager.save(user);
 

@@ -137,10 +137,10 @@ export class UsersController {
         message: 'User ID is required for password change',
       });
     }
-    if (!oldPassword || !newPassword) {
+    if (!newPassword) {
       throw new RpcException({
         code: status.INVALID_ARGUMENT,
-        message: 'Old password and new password are required',
+        message: 'New password is required',
       });
     }
 
