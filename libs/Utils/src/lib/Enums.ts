@@ -83,3 +83,42 @@ export enum EmailStatus {
   SENT = 'SENT',
   FAILED = 'FAILED',
 }
+
+export enum MovieAgeRating {
+  G = 'G',
+  PG = 'PG',
+  PG_13 = 'PG_13',
+  R = 'R',
+  NC_17 = 'NC_17',
+}
+
+export enum MovieStatus {
+  COMING_SOON = 'COMING_SOON',
+  NOW_SHOWING = 'NOW_SHOWING',
+  ARCHIVED = 'ARCHIVED',
+}
+
+export enum ExperienceType {
+  STANDARD_2D = 'STANDARD_2D',
+  STANDARD_3D = 'STANDARD_3D',
+  IMAX_3D = 'IMAX_3D',
+  FOUR_DX = 'FOUR_DX',
+  VIP_LOUNGE = 'VIP_LOUNGE',
+}
+
+export enum SeatType {
+  REGULAR = 'REGULAR',
+  VIP = 'VIP',
+  PREMIUM = 'PREMIUM',
+  COUPLE = 'COUPLE',
+  WHEELCHAIR = 'WHEELCHAIR',
+  EMPTY_SPACE = 'EMPTY_SPACE',
+}
+
+export enum ShowtimeStatus {
+  SCHEDULED = 'SCHEDULED',
+  SELLING = 'SELLING',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED',
+}
+
