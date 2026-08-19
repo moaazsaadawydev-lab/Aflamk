@@ -11,12 +11,15 @@ import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { AuthProviderType, UserStatus } from '@booking-ticket-system/Utils';
+import { ConfirmChangeEmailPayload } from '@booking-ticket-system/Interfaces';
+import {
+  BRUTE_FORCE_LOCKOUT_SECONDS,
+  EMAIL_ROLLBACK_EXPIRY_DAYS,
+  MAX_OTP_ATTEMPTS,
+  OTP_EXPIRY_SECONDS,
+  UserOutboxEvent,
+} from '@booking-ticket-system/Constants';
 import { randomBytes, createHash } from 'crypto';
-
-export interface ConfirmChangeEmailPayload {
-  userId: string;
-  code: string;
-}
 
 interface StoredEmailChangeOtp {
   code: string;
@@ -81,16 +84,19 @@ export class ConfirmChangeEmailProvider {
     const otpData = await this.redisService.get<StoredEmailChangeOtp>(otpKey);
 
     if (!otpData || String(otpData.code).trim() !== String(code).trim()) {
-      // Increment attempt counter with 600s TTL
       const attempts = await this.redisService.incrementCounter(
         attemptsKey,
-        600,
+        OTP_EXPIRY_SECONDS,
       );
 
-      if (attempts >= 6) {
+      if (attempts > MAX_OTP_ATTEMPTS) {
         await this.redisService.del(otpKey);
         await this.redisService.del(attemptsKey);
-        await this.redisService.set(attemptsLockKey, 'locked', 900); // 15-minute TTL
+        await this.redisService.set(
+          attemptsLockKey,
+          'locked',
+          BRUTE_FORCE_LOCKOUT_SECONDS,
+        );
 
         throw new RpcException({
           code: status.PERMISSION_DENIED,
@@ -125,7 +131,6 @@ export class ConfirmChangeEmailProvider {
         });
       }
 
-      // Race condition check: verify newEmail wasn't claimed by another user in the interim
       const normalizedNewEmail = otpData.newEmail.trim().toLowerCase();
       const existingUserWithEmail = await queryRunner.manager.findOne(Users, {
         where: { email: normalizedNewEmail },
@@ -151,12 +156,14 @@ export class ConfirmChangeEmailProvider {
 
       await queryRunner.manager.save(user);
 
-      // Generate 32-byte secure rollback token and hash with SHA-256 (Valid for 30 days)
+      // Generate 32-byte secure rollback token and hash with SHA-256
       const rollbackToken = randomBytes(32).toString('hex');
       const rollbackTokenHash = createHash('sha256')
         .update(rollbackToken)
         .digest('hex');
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const expiresAt = new Date(
+        Date.now() + EMAIL_ROLLBACK_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
+      );
 
       await queryRunner.manager.save(
         queryRunner.manager.create(UserEmailHistory, {
@@ -172,7 +179,7 @@ export class ConfirmChangeEmailProvider {
       const changedAt = new Date().toISOString();
       await queryRunner.manager.save([
         queryRunner.manager.create(OutboxMessage, {
-          eventType: 'user.email-change.success',
+          eventType: UserOutboxEvent.EMAIL_CHANGE_SUCCESS,
           payload: {
             userId: user.id,
             oldEmail,
@@ -183,7 +190,7 @@ export class ConfirmChangeEmailProvider {
           },
         }),
         queryRunner.manager.create(OutboxMessage, {
-          eventType: 'user.email-change.success-alert',
+          eventType: UserOutboxEvent.EMAIL_CHANGE_SUCCESS_ALERT,
           payload: {
             userId: user.id,
             oldEmail,

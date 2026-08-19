@@ -20,6 +20,8 @@ import {
   UpdateUserStatusProvider,
   LogoutProvider,
   GoogleLoginProvider,
+} from './Providers';
+import {
   UpdateUserStatusPayload,
   LogoutPayload,
   GoogleLoginPayload,
@@ -27,7 +29,7 @@ import {
   ResetPasswordPayload,
   RequestChangeEmailPayload,
   ConfirmChangeEmailPayload,
-} from './Providers';
+} from '@booking-ticket-system/Interfaces';
 
 @Injectable()
 export class UsersService {

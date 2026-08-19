@@ -6,16 +6,12 @@ import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { RedisService } from '@booking-ticket-system/Redis';
+import { ChangePasswordPayload } from '@booking-ticket-system/Interfaces';
+import {
+  BCRYPT_SALT_ROUNDS,
+  UserOutboxEvent,
+} from '@booking-ticket-system/Constants';
 import * as bcrypt from 'bcryptjs';
-
-export interface ChangePasswordPayload {
-  userId: string;
-  oldPassword?: string;
-  newPassword: string;
-  confirmPassword?: string;
-  userAgent?: string;
-  ipAddress?: string;
-}
 
 @Injectable()
 export class UpdatePasswordsProvider {
@@ -83,7 +79,10 @@ export class UpdatePasswordsProvider {
         }
       }
 
-      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+      const hashedNewPassword = await bcrypt.hash(
+        newPassword,
+        BCRYPT_SALT_ROUNDS,
+      );
       user.password = hashedNewPassword;
       user.passwordChangedAt = new Date();
 
@@ -92,7 +91,7 @@ export class UpdatePasswordsProvider {
       const changedAt = new Date().toISOString();
       await queryRunner.manager.save(
         queryRunner.manager.create(OutboxMessage, {
-          eventType: 'USER_PASSWORD_CHANGED',
+          eventType: UserOutboxEvent.USER_PASSWORD_CHANGED,
           payload: {
             userId: user.id,
             email: user.email,
@@ -113,7 +112,6 @@ export class UpdatePasswordsProvider {
           `Immediate outbox publish attempt failed: ${err.message}`,
         );
       });
-
 
       return {
         success: true,

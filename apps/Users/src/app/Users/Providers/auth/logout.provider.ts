@@ -1,12 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@booking-ticket-system/Redis';
+import { LogoutPayload } from '@booking-ticket-system/Interfaces';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
-
-export interface LogoutPayload {
-  userId: string;
-  sessionId?: string;
-}
 
 @Injectable()
 export class LogoutProvider {

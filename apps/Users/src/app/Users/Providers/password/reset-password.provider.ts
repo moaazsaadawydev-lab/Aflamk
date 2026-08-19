@@ -4,16 +4,17 @@ import { DataSource } from 'typeorm';
 import { Users, OutboxMessage } from '@booking-ticket-system/Entities';
 import { RedisService } from '@booking-ticket-system/Redis';
 import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
+import { ResetPasswordPayload } from '@booking-ticket-system/Interfaces';
+import {
+  BCRYPT_SALT_ROUNDS,
+  BRUTE_FORCE_LOCKOUT_SECONDS,
+  MAX_OTP_ATTEMPTS,
+  PASSWORD_RESET_OTP_EXPIRY_SECONDS,
+  UserOutboxEvent,
+} from '@booking-ticket-system/Constants';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import * as bcrypt from 'bcryptjs';
-
-export interface ResetPasswordPayload {
-  email: string;
-  otp: string;
-  newPassword: string;
-  confirmPassword?: string;
-}
 
 @Injectable()
 export class ResetPasswordProvider {
@@ -53,16 +54,20 @@ export class ResetPasswordProvider {
       });
     }
 
-    // Brute-force protection: Increment attempt counter with 300s TTL
+    // Brute-force protection: Increment attempt counter
     const attempts = await this.redisService.incrementCounter(
       attemptsKey,
-      300,
+      PASSWORD_RESET_OTP_EXPIRY_SECONDS,
     );
 
-    if (attempts > 5) {
+    if (attempts > MAX_OTP_ATTEMPTS) {
       await this.redisService.del(otpKey);
       await this.redisService.del(attemptsKey);
-      await this.redisService.set(lockoutKey, 'locked', 900); // 15-minute TTL
+      await this.redisService.set(
+        lockoutKey,
+        'locked',
+        BRUTE_FORCE_LOCKOUT_SECONDS,
+      );
 
       throw new RpcException({
         code: status.PERMISSION_DENIED,
@@ -99,7 +104,10 @@ export class ResetPasswordProvider {
         });
       }
 
-      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      const hashedPassword = await bcrypt.hash(
+        newPassword,
+        BCRYPT_SALT_ROUNDS,
+      );
       user.password = hashedPassword;
       user.passwordChangedAt = new Date();
       user.mustChangePassword = false;
@@ -109,7 +117,7 @@ export class ResetPasswordProvider {
       const changedAt = new Date().toISOString();
       await queryRunner.manager.save(
         queryRunner.manager.create(OutboxMessage, {
-          eventType: 'USER_PASSWORD_RESET_SUCCESS',
+          eventType: UserOutboxEvent.USER_PASSWORD_RESET_SUCCESS,
           payload: {
             userId: user.id,
             email: user.email,

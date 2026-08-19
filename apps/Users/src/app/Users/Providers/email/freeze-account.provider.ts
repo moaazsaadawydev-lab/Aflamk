@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from '@booking-ticket-system/Redis';
+import { EMERGENCY_FREEZE_LOCKOUT_SECONDS } from '@booking-ticket-system/Constants';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { createHash } from 'crypto';
@@ -25,7 +26,8 @@ export class FreezeAccountProvider {
     const tokenHash = createHash('sha256').update(token.trim()).digest('hex');
     const freezeKey = `freeze-token:${tokenHash}`;
 
-    const storedData = await this.redisService.get<StoredFreezeToken>(freezeKey);
+    const storedData =
+      await this.redisService.get<StoredFreezeToken>(freezeKey);
 
     if (!storedData || !storedData.userId) {
       throw new RpcException({
@@ -45,7 +47,7 @@ export class FreezeAccountProvider {
     await this.redisService.set(
       `lock:change-email-frozen:${userId}`,
       'locked',
-      86400,
+      EMERGENCY_FREEZE_LOCKOUT_SECONDS,
     );
 
     // 3. Atomically revoke all active user sessions across all devices
@@ -55,7 +57,7 @@ export class FreezeAccountProvider {
     await this.redisService.del(freezeKey);
 
     this.logger.warn(
-      `🚨 Emergency Account Freeze executed for user ${userId}. All sessions terminated.`,
+      `Emergency Account Freeze executed for user ${userId}. All sessions terminated.`,
     );
 
     return {

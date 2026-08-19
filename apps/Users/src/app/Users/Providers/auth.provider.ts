@@ -11,11 +11,20 @@ import { ConfigService } from '@nestjs/config';
 import { AccessPayloadType, RefreshPayloadType } from '@booking-ticket-system/Types';
 import { UserStatus } from '@booking-ticket-system/Utils';
 import {
+  AuthTokensResponse,
+  SessionData,
+} from '@booking-ticket-system/Interfaces';
+import {
+  BCRYPT_SALT_ROUNDS,
+  DEFAULT_ACCESS_TOKEN_EXPIRY,
+  DEFAULT_REFRESH_TOKEN_EXPIRY,
+} from '@booking-ticket-system/Constants';
+import {
   RedisService,
   SESSION_PREFIX,
   USER_SESSIONS_PREFIX,
 } from '@booking-ticket-system/Redis';
-import { randomUUID } from 'crypto';
+import { SessionService } from '../Services/session.service';
 
 @Injectable()
 export class AuthProvider {
@@ -25,40 +34,10 @@ export class AuthProvider {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
+    private readonly sessionService: SessionService,
   ) {}
 
-  private parseDurationToMs(duration?: string | number): number {
-    if (typeof duration === 'number') {
-      return duration * 1000;
-    }
-    if (!duration) return 7 * 24 * 60 * 60 * 1000;
-
-    const match = /^(\d+)([smhd])?$/i.exec(duration.trim());
-    if (!match) {
-      const parsed = parseInt(duration, 10);
-      return isNaN(parsed) ? 7 * 24 * 60 * 60 * 1000 : parsed * 1000;
-    }
-
-    const value = parseInt(match[1], 10);
-    const unit = (match[2] || 's').toLowerCase();
-
-    switch (unit) {
-      case 's':
-        return value * 1000;
-      case 'm':
-        return value * 60 * 1000;
-      case 'h':
-        return value * 60 * 60 * 1000;
-      case 'd':
-        return value * 24 * 60 * 60 * 1000;
-      default:
-        return value * 1000;
-    }
-  }
-
-  async login(
-    loginDto: LoginDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  async login(loginDto: LoginDto): Promise<AuthTokensResponse> {
     const { email, password, userAgent, ipAddress } = loginDto;
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -67,117 +46,16 @@ export class AuthProvider {
       where: { email: normalizedEmail },
     });
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
       throw new RpcException({
         code: status.UNAUTHENTICATED,
         message: 'Invalid email or password',
       });
     }
 
-    if (user.status === UserStatus.UNVERIFIED) {
-      throw new RpcException({
-        code: status.PERMISSION_DENIED,
-        message: 'Please verify your email to activate your account.',
-      });
-    }
+    await this.sessionService.validateAndResolveUserStatus(user);
 
-    if (user.status === UserStatus.SUSPENDED) {
-      if (user.suspendedUntil && new Date(user.suspendedUntil) <= new Date()) {
-        user.status = UserStatus.ACTIVE;
-        user.statusReason = null;
-        user.suspendedUntil = null;
-        user.statusChangedAt = new Date();
-        await this.userRepository.save(user);
-      } else {
-        const reason = user.statusReason
-          ? `: ${user.statusReason}`
-          : ' due to security hold.';
-        throw new RpcException({
-          code: status.PERMISSION_DENIED,
-          message: `Account is suspended${reason}`,
-        });
-      }
-    }
-
-    if (user.status === UserStatus.BLOCKED) {
-      throw new RpcException({
-        code: status.PERMISSION_DENIED,
-        message:
-          'Account has been permanently blocked due to policy violations.',
-      });
-    }
-
-    if (user.status === UserStatus.DELETED) {
-      throw new RpcException({
-        code: status.NOT_FOUND,
-        message: 'Account not found.',
-      });
-    }
-
-    if (user.status !== UserStatus.ACTIVE) {
-      throw new RpcException({
-        code: status.PERMISSION_DENIED,
-        message: 'Account is not active.',
-      });
-    }
-
-    const sessionId = randomUUID();
-
-    const accessPayload: AccessPayloadType = {
-      id: user.id,
-      role: user.role,
-      status: user.status,
-      sessionId,
-    };
-
-    const refreshPayload: RefreshPayloadType = {
-      id: user.id,
-      sessionId,
-    };
-
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(accessPayload, {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-        expiresIn: this.configService.get<string>(
-          'JWT_ACCESS_EXPIRE_IN',
-        ) as any,
-      }),
-      this.jwtService.signAsync(refreshPayload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get<string>(
-          'JWT_REFRESH_EXPIRE_IN',
-        ) as any,
-      }),
-    ]);
-
-    const salt = await bcrypt.genSalt(10);
-    const refreshTokenHash = await bcrypt.hash(refreshToken, salt);
-
-    const refreshExpireIn = this.configService.get<string>(
-      'JWT_REFRESH_EXPIRE_IN',
-    );
-    const ttlSeconds = Math.floor(this.parseDurationToMs(refreshExpireIn) / 1000);
-
-    const sessionKey = `${SESSION_PREFIX}${user.id}:${sessionId}`;
-    const userSessionsKey = `${USER_SESSIONS_PREFIX}${user.id}`;
-
-    await this.redisService.set(
-      sessionKey,
-      {
-        refreshTokenHash,
-        userAgent: userAgent ?? null,
-        ipAddress: ipAddress ?? null,
-        createdAt: new Date().toISOString(),
-      },
-      ttlSeconds,
-    );
-
-    await this.redisService.sadd(userSessionsKey, sessionId);
-
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return await this.sessionService.createSession(user, userAgent, ipAddress);
   }
 
   async refresh(refreshToken: string): Promise<{
@@ -193,7 +71,7 @@ export class AuthProvider {
         await this.jwtService.verifyAsync<RefreshPayloadType>(refreshToken, {
           secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
         });
-    } catch (error) {
+    } catch {
       throw new RpcException({
         code: status.UNAUTHENTICATED,
         message: 'Invalid or expired refresh token',
@@ -212,12 +90,7 @@ export class AuthProvider {
     const sessionKey = `${SESSION_PREFIX}${userId}:${sessionId}`;
     const userSessionsKey = `${USER_SESSIONS_PREFIX}${userId}`;
 
-    const sessionData = await this.redisService.get<{
-      refreshTokenHash: string;
-      userAgent?: string;
-      ipAddress?: string;
-      createdAt?: string;
-    }>(sessionKey);
+    const sessionData = await this.redisService.get<SessionData>(sessionKey);
 
     if (!sessionData) {
       throw new RpcException({
@@ -269,27 +142,32 @@ export class AuthProvider {
       sessionId,
     };
 
+    const accessSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
+    const accessExpireIn =
+      this.configService.get<string>('JWT_ACCESS_EXPIRE_IN') ||
+      DEFAULT_ACCESS_TOKEN_EXPIRY;
+
+    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+    const refreshExpireIn =
+      this.configService.get<string>('JWT_REFRESH_EXPIRE_IN') ||
+      DEFAULT_REFRESH_TOKEN_EXPIRY;
+
     const [accessToken, newRefreshToken] = await Promise.all([
       this.jwtService.signAsync(accessPayload, {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-        expiresIn: this.configService.get<string>(
-          'JWT_ACCESS_EXPIRE_IN',
-        ) as any,
+        secret: accessSecret,
+        expiresIn: accessExpireIn as any,
       }),
       this.jwtService.signAsync(refreshPayload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get<string>(
-          'JWT_REFRESH_EXPIRE_IN',
-        ) as any,
+        secret: refreshSecret,
+        expiresIn: refreshExpireIn as any,
       }),
     ]);
 
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
     const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, salt);
-    const refreshExpireIn = this.configService.get<string>(
-      'JWT_REFRESH_EXPIRE_IN',
+    const ttlSeconds = Math.floor(
+      this.sessionService.parseDurationToMs(refreshExpireIn) / 1000,
     );
-    const ttlSeconds = Math.floor(this.parseDurationToMs(refreshExpireIn) / 1000);
 
     await this.redisService.set(
       sessionKey,
@@ -308,5 +186,3 @@ export class AuthProvider {
     };
   }
 }
-
-

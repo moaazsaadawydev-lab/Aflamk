@@ -4,14 +4,16 @@ import { DataSource, Repository } from 'typeorm';
 import { Users, OutboxMessage } from '@booking-ticket-system/Entities';
 import { RedisService } from '@booking-ticket-system/Redis';
 import { NotificationType, UserStatus } from '@booking-ticket-system/Utils';
+import { ResendVerificationCodePayload } from '@booking-ticket-system/Interfaces';
+import {
+  OTP_EXPIRY_SECONDS,
+  RATE_LIMIT_COOLDOWN_SECONDS,
+  UserOutboxEvent,
+} from '@booking-ticket-system/Constants';
 import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { randomInt } from 'crypto';
-
-export interface ResendVerificationCodePayload {
-  email: string;
-}
 
 @Injectable()
 export class ResendVerificationCodeProvider {
@@ -66,7 +68,7 @@ export class ResendVerificationCodeProvider {
       });
     }
 
-    // 2. Check Resend Cooldown in Redis (60s)
+    // 2. Check Resend Cooldown in Redis
     const cooldownKey = `cooldown:resend-verification:${normalizedEmail}`;
     const isCooldownActive = await this.redisService.exists(cooldownKey);
     if (isCooldownActive) {
@@ -84,15 +86,19 @@ export class ResendVerificationCodeProvider {
     const otpKey = `otp:verify-email:${normalizedEmail}`;
     const attemptsKey = `rate:verify-email-attempts:${normalizedEmail}`;
 
-    await this.redisService.set(otpKey, code, 600); // 10 minutes
-    await this.redisService.del(attemptsKey); // Reset failed attempts
-    await this.redisService.set(cooldownKey, 'active', 60); // 60s cooldown
+    await this.redisService.set(otpKey, code, OTP_EXPIRY_SECONDS);
+    await this.redisService.del(attemptsKey);
+    await this.redisService.set(
+      cooldownKey,
+      'active',
+      RATE_LIMIT_COOLDOWN_SECONDS,
+    );
 
     // 5. Save Outbox Event
     const outboxRepo = this.dataSource.getRepository(OutboxMessage);
     await outboxRepo.save(
       outboxRepo.create({
-        eventType: 'user.account-verification.resend',
+        eventType: UserOutboxEvent.ACCOUNT_VERIFICATION_RESEND,
         payload: {
           userId: user.id,
           email: user.email,

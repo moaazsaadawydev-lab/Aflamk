@@ -4,16 +4,18 @@ import { DataSource, Repository } from 'typeorm';
 import { Users, OutboxMessage } from '@booking-ticket-system/Entities';
 import { RedisService } from '@booking-ticket-system/Redis';
 import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
+import { RequestChangeEmailPayload } from '@booking-ticket-system/Interfaces';
+import {
+  BRUTE_FORCE_LOCKOUT_SECONDS,
+  EMERGENCY_FREEZE_LOCKOUT_SECONDS,
+  OTP_EXPIRY_SECONDS,
+  RATE_LIMIT_COOLDOWN_SECONDS,
+  UserOutboxEvent,
+} from '@booking-ticket-system/Constants';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import * as bcrypt from 'bcryptjs';
 import { randomInt, randomBytes, createHash } from 'crypto';
-
-export interface RequestChangeEmailPayload {
-  userId: string;
-  currentPassword?: string;
-  newEmail: string;
-}
 
 @Injectable()
 export class RequestChangeEmailProvider {
@@ -128,7 +130,7 @@ export class RequestChangeEmailProvider {
       });
     }
 
-    // 6. Service cooldown check (1 request per 60s)
+    // 6. Service cooldown check
     const cooldownKey = `rate:change-email:${userId}`;
     const isCooldownActive = await this.redisService.exists(cooldownKey);
     if (isCooldownActive) {
@@ -142,18 +144,22 @@ export class RequestChangeEmailProvider {
     // 7. Reset attempts counter and set cooldown
     const attemptsKey = `rate:change-email-attempts:${userId}`;
     await this.redisService.del(attemptsKey);
-    await this.redisService.set(cooldownKey, '1', 60);
+    await this.redisService.set(
+      cooldownKey,
+      '1',
+      RATE_LIMIT_COOLDOWN_SECONDS,
+    );
 
-    // 8. Generate 6-digit numeric OTP and store in Redis (TTL: 600s)
+    // 8. Generate 6-digit numeric OTP and store in Redis
     const code = randomInt(100000, 1000000).toString();
     const otpKey = `otp:change-email:${userId}`;
     await this.redisService.set(
       otpKey,
       { code, newEmail: normalizedNewEmail },
-      600,
+      OTP_EXPIRY_SECONDS,
     );
 
-    // 9. Generate Emergency In-Flight Freeze Token (TTL: 600s)
+    // 9. Generate Emergency In-Flight Freeze Token
     const freezeToken = randomBytes(32).toString('hex');
     const freezeTokenHash = createHash('sha256')
       .update(freezeToken)
@@ -161,14 +167,14 @@ export class RequestChangeEmailProvider {
     await this.redisService.set(
       `freeze-token:${freezeTokenHash}`,
       { userId: user.id },
-      600,
+      OTP_EXPIRY_SECONDS,
     );
 
     // 10. Save Outbox Messages (Dual Notification)
     const outboxRepo = this.dataSource.getRepository(OutboxMessage);
     await outboxRepo.save([
       outboxRepo.create({
-        eventType: 'user.email-change.otp-requested',
+        eventType: UserOutboxEvent.EMAIL_CHANGE_OTP_REQUESTED,
         payload: {
           userId: user.id,
           oldEmail: user.email,
@@ -178,7 +184,7 @@ export class RequestChangeEmailProvider {
         },
       }),
       outboxRepo.create({
-        eventType: 'user.email-change.security-alert',
+        eventType: UserOutboxEvent.EMAIL_CHANGE_SECURITY_ALERT,
         payload: {
           userId: user.id,
           oldEmail: user.email,

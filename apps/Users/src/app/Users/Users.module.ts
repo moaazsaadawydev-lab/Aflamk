@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { UsersController } from './Users.controller';
 import { UsersService } from './Users.Service';
+import { SessionService } from './Services/session.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -9,6 +9,13 @@ import { Users, UserEmailHistory } from '@booking-ticket-system/Entities';
 import { OutboxModule } from '../outbox/outbox.module';
 import { RedisModule } from '@booking-ticket-system/Redis';
 import { SanitizeUserInterceptor } from '@booking-ticket-system/Common';
+import {
+  UsersAuthController,
+  UsersRegistrationController,
+  UsersAccountController,
+  UsersProfileController,
+  UsersAdminController,
+} from './Controllers';
 import {
   RegistrationProvider,
   AuthProvider,
@@ -74,9 +81,16 @@ import {
     }),
     OutboxModule,
   ],
-  controllers: [UsersController],
+  controllers: [
+    UsersAuthController,
+    UsersRegistrationController,
+    UsersAccountController,
+    UsersProfileController,
+    UsersAdminController,
+  ],
   providers: [
     UsersService,
+    SessionService,
     RegistrationProvider,
     AuthProvider,
     ProfileProvider,
@@ -95,6 +109,11 @@ import {
     SanitizeUserInterceptor,
   ],
   exports: [
+    UsersService,
+    SessionService,
+    RegistrationProvider,
+    AuthProvider,
+    ProfileProvider,
     UpdateUserProvider,
     UpdatePasswordsProvider,
     ForgotPasswordProvider,
@@ -110,6 +129,4 @@ import {
     SanitizeUserInterceptor,
   ],
 })
-
 export class UsersModule {}
-

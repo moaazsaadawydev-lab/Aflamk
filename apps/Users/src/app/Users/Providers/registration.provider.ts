@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { RegisterDto, VerifyEmailDto } from '@booking-ticket-system/DTOs';
 import { OutboxMessage, Users } from '@booking-ticket-system/Entities';
 import { DataSource, Repository } from 'typeorm';
@@ -11,6 +11,12 @@ import {
   UserGender,
   UserStatus,
 } from '@booking-ticket-system/Utils';
+import {
+  BCRYPT_SALT_ROUNDS,
+  MAX_OTP_ATTEMPTS,
+  OTP_EXPIRY_SECONDS,
+  UserOutboxEvent,
+} from '@booking-ticket-system/Constants';
 import { RedisService } from '@booking-ticket-system/Redis';
 import * as bcrypt from 'bcryptjs';
 import { randomInt, randomUUID } from 'crypto';
@@ -44,13 +50,14 @@ export class RegistrationProvider {
       });
     }
 
-    const rawBirthDate = registerDto.birthDate || (registerDto as any).birth_date;
+    const rawBirthDate =
+      registerDto.birthDate || (registerDto as any).birth_date;
     const birthDate = rawBirthDate ? new Date(rawBirthDate) : null;
 
     const code = randomInt(100000, 1000000).toString();
     const passwordHash = await bcrypt.hash(
       registerDto.password,
-      await bcrypt.genSalt(10),
+      await bcrypt.genSalt(BCRYPT_SALT_ROUNDS),
     );
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -59,7 +66,6 @@ export class RegistrationProvider {
 
     try {
       const userId = randomUUID();
-      Logger.log('dto', registerDto);
       const tempKey = registerDto.tempObjectKey;
       const avatarKey = tempKey ? `avatars/${userId}.webp` : null;
 
@@ -79,7 +85,7 @@ export class RegistrationProvider {
 
       await queryRunner.manager.save(
         queryRunner.manager.create(OutboxMessage, {
-          eventType: 'user_created',
+          eventType: UserOutboxEvent.USER_CREATED,
           payload: {
             email: user.email,
             name: user.name,
@@ -97,7 +103,7 @@ export class RegistrationProvider {
       if (tempKey) {
         await queryRunner.manager.save(
           queryRunner.manager.create(OutboxMessage, {
-            eventType: 'process_profile_photo',
+            eventType: UserOutboxEvent.PROCESS_PROFILE_PHOTO,
             payload: {
               userId: user.id,
               tempObjectKey: tempKey,
@@ -120,15 +126,11 @@ export class RegistrationProvider {
       const otpKey = `otp:verify-email:${normalizedEmail}`;
       const attemptsKey = `rate:verify-email-attempts:${normalizedEmail}`;
 
-      await this.redisService.set(otpKey, code, 600);
+      await this.redisService.set(otpKey, code, OTP_EXPIRY_SECONDS);
       await this.redisService.del(attemptsKey);
 
       this.outboxService.publishPendingMessages().catch((err) => {
-        Logger.error(`Immediate publish attempt failed: ${err.message}`);
-        throw new RpcException({
-          code: status.INTERNAL,
-          message: 'Immediate publish attempt failed',
-        });
+        this.logger.error(`Immediate publish attempt failed: ${err.message}`);
       });
 
       return {
@@ -183,9 +185,12 @@ export class RegistrationProvider {
     const otpKey = `otp:verify-email:${normalizedEmail}`;
     const attemptsKey = `rate:verify-email-attempts:${normalizedEmail}`;
 
-    const attempts = await this.redisService.incrementCounter(attemptsKey, 600);
+    const attempts = await this.redisService.incrementCounter(
+      attemptsKey,
+      OTP_EXPIRY_SECONDS,
+    );
 
-    if (attempts > 5) {
+    if (attempts > MAX_OTP_ATTEMPTS) {
       await this.redisService.del(otpKey);
       throw new RpcException({
         code: status.PERMISSION_DENIED,

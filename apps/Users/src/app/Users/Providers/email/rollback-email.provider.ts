@@ -11,6 +11,7 @@ import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { UserStatus } from '@booking-ticket-system/Utils';
+import { UserOutboxEvent } from '@booking-ticket-system/Constants';
 import { createHash } from 'crypto';
 
 @Injectable()
@@ -99,20 +100,21 @@ export class RollbackEmailProvider {
 
       await queryRunner.manager.save(user);
 
-      const revertedAt = new Date();
+      // Invalidate rollback token to prevent replay attacks
       history.isReverted = true;
-      history.revertedAt = revertedAt;
-
+      history.revertedAt = new Date();
       await queryRunner.manager.save(history);
 
+      const rollbackAt = new Date().toISOString();
       await queryRunner.manager.save(
         queryRunner.manager.create(OutboxMessage, {
-          eventType: 'user.email-change.reverted',
+          eventType: UserOutboxEvent.USER_PASSWORD_CHANGED,
           payload: {
-            userId: user.id,
+            userId,
             email: restoredEmail,
             name: userName,
-            revertedAt: revertedAt.toISOString(),
+            action: 'EMAIL_REVERTED_ROLLBACK',
+            rollbackAt,
           },
         }),
       );
@@ -125,11 +127,7 @@ export class RollbackEmailProvider {
       await queryRunner.release();
     }
 
-    // 3. Atomically revoke all active user sessions across all devices & clean up OTP keys
-    await this.redisService.del(`otp:change-email:${userId}`);
-    await this.redisService.del(`rate:change-email-attempts:${userId}`);
-    await this.redisService.del(`rate:change-email:${userId}`);
-    await this.redisService.del(`lock:change-email-attempts:${userId}`);
+    // 3. Post-Transaction: Terminate all active sessions immediately
     await this.redisService.revokeAllUserSessions(userId);
 
     this.outboxService.publishPendingMessages().catch((err) => {
@@ -138,14 +136,14 @@ export class RollbackEmailProvider {
       );
     });
 
-    this.logger.log(
-      `🛡️ 30-Day Email Rollback executed successfully for user ${userId}. Email restored to ${restoredEmail}.`,
+    this.logger.warn(
+      `Email rollback executed for user ${userId}. Restored email to ${restoredEmail}.`,
     );
 
     return {
       success: true,
       message:
-        'Account email has been rolled back successfully. All sessions revoked. Please reset your password.',
+        'Email address successfully restored. For your security, all active sessions have been terminated. Please log in and update your password.',
     };
   }
 }

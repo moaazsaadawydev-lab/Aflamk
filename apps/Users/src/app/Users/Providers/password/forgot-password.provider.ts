@@ -4,6 +4,12 @@ import { DataSource, Repository } from 'typeorm';
 import { Users, OutboxMessage } from '@booking-ticket-system/Entities';
 import { RedisService } from '@booking-ticket-system/Redis';
 import { OutboxPublisherService } from '../../../outbox/outbox-publisher.service';
+import {
+  BRUTE_FORCE_LOCKOUT_SECONDS,
+  PASSWORD_RESET_OTP_EXPIRY_SECONDS,
+  RATE_LIMIT_COOLDOWN_SECONDS,
+  UserOutboxEvent,
+} from '@booking-ticket-system/Constants';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { randomInt } from 'crypto';
@@ -63,16 +69,22 @@ export class ForgotPasswordProvider {
     const otpKey = `otp:reset-password:${normalizedEmail}`;
     const attemptsKey = `rate:otp-attempts:${normalizedEmail}`;
 
-    await this.redisService.set(otpKey, otpCode, 300);
-
+    await this.redisService.set(
+      otpKey,
+      otpCode,
+      PASSWORD_RESET_OTP_EXPIRY_SECONDS,
+    );
     await this.redisService.del(attemptsKey);
-
-    await this.redisService.set(rateLimitKey, '1', 60);
+    await this.redisService.set(
+      rateLimitKey,
+      '1',
+      RATE_LIMIT_COOLDOWN_SECONDS,
+    );
 
     const outboxRepo = this.dataSource.getRepository(OutboxMessage);
     await outboxRepo.save(
       outboxRepo.create({
-        eventType: 'USER_FORGOT_PASSWORD',
+        eventType: UserOutboxEvent.USER_FORGOT_PASSWORD,
         payload: {
           userId: user.id,
           email: user.email,

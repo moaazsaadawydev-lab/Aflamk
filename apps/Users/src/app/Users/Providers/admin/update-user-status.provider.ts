@@ -4,15 +4,9 @@ import { Repository } from 'typeorm';
 import { Users } from '@booking-ticket-system/Entities';
 import { RedisService } from '@booking-ticket-system/Redis';
 import { UserStatus } from '@booking-ticket-system/Utils';
+import { UpdateUserStatusPayload } from '@booking-ticket-system/Interfaces';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
-
-export interface UpdateUserStatusPayload {
-  targetUserId: string;
-  status: UserStatus;
-  reason?: string;
-  suspendedUntil?: string;
-}
 
 @Injectable()
 export class UpdateUserStatusProvider {
