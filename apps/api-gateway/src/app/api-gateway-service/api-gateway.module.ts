@@ -13,6 +13,7 @@ import { RedisModule } from '@booking-ticket-system/Redis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StorageModule } from '@booking-ticket-system/Storage';
 import { PassportModule } from '@nestjs/passport';
+import { CATALOG_SERVICE } from '@booking-ticket-system/Constants';
 import {
   UsersAuthController,
   UsersRegistrationController,
@@ -21,10 +22,17 @@ import {
   UsersAdminController,
 } from './Controllers/Users';
 import {
+  CatalogMoviesController,
+  CatalogCinemasController,
+  CatalogSeatsController,
+  CatalogShowtimesController,
+} from './Controllers/Catalog';
+import {
   AuthProvider,
   RegistrationProvider,
   UserProfileProvider,
   GoogleStrategy,
+  CatalogProvider,
 } from './providers';
 
 @Module({
@@ -57,6 +65,26 @@ import {
           },
         }),
       },
+      {
+        name: CATALOG_SERVICE,
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.GRPC,
+          options: {
+            package: 'catalog',
+            protoPath: join(process.cwd(), 'libs/protos/Catalog.proto'),
+            url:
+              process.env.NODE_ENV === 'docker-development'
+                ? config.get<string>('CATALOG_GRPC_DEV_DOC_URL')
+                : process.env.NODE_ENV === 'development'
+                  ? config.get<string>('CATALOG_GRPC_DEV_URL')
+                  : config.get<string>('CATALOG_GRPC_DEV_DOC_URL'),
+            loader: {
+              keepCase: true,
+            },
+          },
+        }),
+      },
     ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -74,6 +102,10 @@ import {
     UsersAccountController,
     UsersProfileController,
     UsersAdminController,
+    CatalogMoviesController,
+    CatalogCinemasController,
+    CatalogSeatsController,
+    CatalogShowtimesController,
   ],
   providers: [
     JwtAuthGuard,
@@ -85,6 +117,7 @@ import {
     RegistrationProvider,
     UserProfileProvider,
     GoogleStrategy,
+    CatalogProvider,
   ],
 })
 export class ApiGatewayModule {}

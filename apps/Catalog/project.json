@@ -63,6 +63,13 @@
           "buildTarget": "Catalog:build:production"
         }
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --config apps/Catalog/jest.config.ts --runInBand",
+        "cwd": "{workspaceRoot}"
+      }
     }
   },
   "tags": []

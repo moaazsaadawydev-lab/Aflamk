@@ -13,6 +13,11 @@ import {
 } from '@booking-ticket-system/Entities';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CatalogEventsController } from './events/catalog-events.controller';
+import { MoviesModule } from './movies/movies.module';
+import { CinemasModule } from './cinemas/cinemas.module';
+import { SeatsModule } from './seats/seats.module';
+import { ShowtimesModule } from './showtimes/showtimes.module';
 
 @Module({
   imports: [
@@ -55,8 +60,12 @@ import { AppService } from './app.service';
       ShowtimeSeatPricing,
       OutboxMessage,
     ]),
+    MoviesModule,
+    CinemasModule,
+    SeatsModule,
+    ShowtimesModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, CatalogEventsController],
   providers: [AppService],
 })
 export class AppModule {}

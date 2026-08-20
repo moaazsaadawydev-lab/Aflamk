@@ -125,6 +125,25 @@ services:
     networks:
       - booking-network
 
+  catalog-service:
+    build:
+      context: .
+      dockerfile: apps/Catalog/Dockerfile
+    container_name: catalog-service
+    env_file:
+      - libs/env/.env.docker-development
+    environment:
+      - NODE_ENV=docker-development
+    ports:
+      - '50052:50052'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - booking-network
+
   api-gateway:
     build:
       context: .
@@ -142,6 +161,8 @@ services:
       notifications-service:
         condition: service_started
       media-service:
+        condition: service_started
+      catalog-service:
         condition: service_started
       rabbitmq:
         condition: service_healthy

@@ -15,3 +15,8 @@ export * from './lib/RollbackEmail.dto';
 export * from './lib/ResendVerificationCode.dto';
 export * from './lib/UpdateUserStatus.dto';
 export * from './lib/Logout.dto';
+export * from './lib/catalog/movie.dto';
+export * from './lib/catalog/cinema.dto';
+export * from './lib/catalog/seat.dto';
+export * from './lib/catalog/showtime.dto';
+

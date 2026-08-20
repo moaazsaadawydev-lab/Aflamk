@@ -30,3 +30,10 @@ export enum UserOutboxEvent {
   EMAIL_CHANGE_SUCCESS_ALERT = 'user.email-change.success-alert',
   ACCOUNT_VERIFICATION_RESEND = 'user.account-verification.resend',
 }
+
+// Catalog Constants
+export const CATALOG_SERVICE = 'CATALOG_SERVICE';
+export const CATALOG_PACKAGE_NAME = 'catalog';
+export const CATALOG_EVENTS_QUEUE = 'catalog_events_queue';
+
+

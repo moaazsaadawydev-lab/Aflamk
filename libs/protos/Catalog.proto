@@ -1,0 +1,530 @@
+syntax = "proto3";
+
+package catalog;
+
+// ==========================================
+// Services
+// ==========================================
+
+service MoviesService {
+  rpc CreateMovie(CreateMovieRequest) returns (MovieResponse) {}
+  rpc GetMovieById(GetMovieByIdRequest) returns (MovieResponse) {}
+  rpc GetMovieBySlug(GetMovieBySlugRequest) returns (MovieResponse) {}
+  rpc ListMovies(ListMoviesRequest) returns (ListMoviesResponse) {}
+  rpc UpdateMovie(UpdateMovieRequest) returns (MovieResponse) {}
+  rpc DeleteMovie(DeleteMovieRequest) returns (DeleteMovieResponse) {}
+  rpc ListGenres(ListGenresRequest) returns (ListGenresResponse) {}
+}
+
+service CinemasService {
+  rpc CreateCinema(CreateCinemaRequest) returns (CinemaResponse) {}
+  rpc GetCinemaById(GetCinemaByIdRequest) returns (CinemaResponse) {}
+  rpc GetCinemaBySlug(GetCinemaBySlugRequest) returns (CinemaResponse) {}
+  rpc ListCinemas(ListCinemasRequest) returns (ListCinemasResponse) {}
+  rpc UpdateCinema(UpdateCinemaRequest) returns (CinemaResponse) {}
+  rpc DeleteCinema(DeleteCinemaRequest) returns (DeleteCinemaResponse) {}
+
+  rpc CreateAuditorium(CreateAuditoriumRequest) returns (AuditoriumResponse) {}
+  rpc GetAuditoriumById(GetAuditoriumByIdRequest) returns (AuditoriumResponse) {}
+  rpc ListAuditoriumsByCinema(ListAuditoriumsByCinemaRequest) returns (ListAuditoriumsResponse) {}
+  rpc UpdateAuditorium(UpdateAuditoriumRequest) returns (AuditoriumResponse) {}
+  rpc DeleteAuditorium(DeleteAuditoriumRequest) returns (DeleteAuditoriumResponse) {}
+}
+
+service SeatsService {
+  rpc GenerateSeatLayout(GenerateSeatLayoutRequest) returns (SeatsLayoutResponse) {}
+  rpc GetSeatsByAuditorium(GetSeatsByAuditoriumRequest) returns (SeatsLayoutResponse) {}
+  rpc UpdateSeat(UpdateSeatRequest) returns (SeatResponse) {}
+  rpc BatchUpdateSeats(BatchUpdateSeatsRequest) returns (BatchUpdateSeatsResponse) {}
+}
+
+service ShowtimesService {
+  rpc CreateShowtime(CreateShowtimeRequest) returns (ShowtimeDetailsResponse) {}
+  rpc GetShowtimeById(GetShowtimeByIdRequest) returns (ShowtimeDetailsResponse) {}
+  rpc ListShowtimes(ListShowtimesRequest) returns (ListShowtimesResponse) {}
+  rpc GetShowtimesGroupedByCinema(GetShowtimesGroupedByCinemaRequest) returns (GroupedShowtimesResponse) {}
+  rpc UpdateShowtime(UpdateShowtimeRequest) returns (ShowtimeDetailsResponse) {}
+  rpc UpdateShowtimeStatus(UpdateShowtimeStatusRequest) returns (ShowtimeDetailsResponse) {}
+  rpc DeleteShowtime(DeleteShowtimeRequest) returns (DeleteShowtimeResponse) {}
+  rpc SetShowtimeSeatPricings(SetShowtimeSeatPricingsRequest) returns (ShowtimeDetailsResponse) {}
+}
+
+// ==========================================
+// Enums
+// ==========================================
+
+enum MovieAgeRating {
+  AGE_RATING_UNSPECIFIED = 0;
+  G = 1;
+  PG = 2;
+  PG_13 = 3;
+  R = 4;
+  NC_17 = 5;
+}
+
+enum MovieStatus {
+  MOVIE_STATUS_UNSPECIFIED = 0;
+  COMING_SOON = 1;
+  NOW_SHOWING = 2;
+  ARCHIVED = 3;
+}
+
+enum ExperienceType {
+  EXPERIENCE_TYPE_UNSPECIFIED = 0;
+  STANDARD_2D = 1;
+  STANDARD_3D = 2;
+  IMAX_3D = 3;
+  FOUR_DX = 4;
+  VIP_LOUNGE = 5;
+}
+
+enum SeatType {
+  SEAT_TYPE_UNSPECIFIED = 0;
+  REGULAR = 1;
+  VIP = 2;
+  PREMIUM = 3;
+  COUPLE = 4;
+  WHEELCHAIR = 5;
+  EMPTY_SPACE = 6;
+}
+
+enum ShowtimeStatus {
+  SHOWTIME_STATUS_UNSPECIFIED = 0;
+  SCHEDULED = 1;
+  SELLING = 2;
+  CANCELLED = 3;
+  COMPLETED = 4;
+}
+
+// ==========================================
+// Common Messages
+// ==========================================
+
+message PaginationMetadata {
+  int32 total_items = 1;
+  int32 item_count = 2;
+  int32 items_per_page = 3;
+  int32 total_pages = 4;
+  int32 current_page = 5;
+}
+
+message GenreResponse {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string created_at = 4;
+  string updated_at = 5;
+}
+
+message MovieResponse {
+  string id = 1;
+  string title = 2;
+  string slug = 3;
+  string description = 4;
+  int32 duration_minutes = 5;
+  string release_date = 6;
+  string age_rating = 7;
+  string status = 8;
+  string original_language = 9;
+  repeated string spoken_languages = 10;
+  repeated string subtitles = 11;
+  optional string poster_url = 12;
+  optional string banner_url = 13;
+  optional string trailer_url = 14;
+  repeated string directors = 15;
+  repeated string cast = 16;
+  float rating_average = 17;
+  int32 rating_count = 18;
+  repeated GenreResponse genres = 19;
+  string created_at = 20;
+  string updated_at = 21;
+}
+
+message CinemaResponse {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string city = 4;
+  string address = 5;
+  optional double latitude = 6;
+  optional double longitude = 7;
+  optional string phone_number = 8;
+  repeated string facilities = 9;
+  bool is_active = 10;
+  repeated AuditoriumResponse auditoriums = 11;
+  string created_at = 12;
+  string updated_at = 13;
+}
+
+message AuditoriumResponse {
+  string id = 1;
+  string cinema_id = 2;
+  string name = 3;
+  string experience_type = 4;
+  optional string sound_system = 5;
+  int32 total_rows = 6;
+  int32 total_columns = 7;
+  int32 total_seats = 8;
+  bool is_active = 9;
+  string created_at = 10;
+  string updated_at = 11;
+}
+
+message SeatResponse {
+  string id = 1;
+  string auditorium_id = 2;
+  string row_label = 3;
+  int32 seat_number = 4;
+  int32 grid_row = 5;
+  int32 grid_column = 6;
+  string seat_type = 7;
+  bool is_operational = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message SeatsLayoutResponse {
+  string auditorium_id = 1;
+  int32 total_rows = 2;
+  int32 total_columns = 3;
+  int32 total_seats = 4;
+  repeated SeatResponse seats = 5;
+}
+
+message ShowtimeSeatPricingResponse {
+  string id = 1;
+  string showtime_id = 2;
+  string seat_type = 3;
+  double price = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+message ShowtimeDetailsResponse {
+  string id = 1;
+  string movie_id = 2;
+  string auditorium_id = 3;
+  string start_time = 4;
+  string end_time = 5;
+  string experience_type = 6;
+  double base_price = 7;
+  string status = 8;
+  MovieResponse movie = 9;
+  AuditoriumResponse auditorium = 10;
+  CinemaResponse cinema = 11;
+  repeated ShowtimeSeatPricingResponse seat_pricings = 12;
+  string created_at = 13;
+  string updated_at = 14;
+}
+
+// ==========================================
+// Movies Messages
+// ==========================================
+
+message CreateMovieRequest {
+  string title = 1;
+  string description = 2;
+  int32 duration_minutes = 3;
+  string release_date = 4;
+  string age_rating = 5;
+  string status = 6;
+  string original_language = 7;
+  repeated string spoken_languages = 8;
+  repeated string subtitles = 9;
+  optional string poster_url = 10;
+  optional string banner_url = 11;
+  optional string trailer_url = 12;
+  repeated string directors = 13;
+  repeated string cast = 14;
+  repeated string genre_ids = 15;
+}
+
+message GetMovieByIdRequest {
+  string id = 1;
+}
+
+message GetMovieBySlugRequest {
+  string slug = 1;
+}
+
+message ListMoviesRequest {
+  optional int32 page = 1;
+  optional int32 limit = 2;
+  optional string status = 3;
+  optional string search = 4;
+  optional string genre_id = 5;
+  optional string genre_slug = 6;
+}
+
+message ListMoviesResponse {
+  repeated MovieResponse items = 1;
+  PaginationMetadata meta = 2;
+}
+
+message UpdateMovieRequest {
+  string id = 1;
+  optional string title = 2;
+  optional string description = 3;
+  optional int32 duration_minutes = 4;
+  optional string release_date = 5;
+  optional string age_rating = 6;
+  optional string status = 7;
+  optional string original_language = 8;
+  repeated string spoken_languages = 9;
+  repeated string subtitles = 10;
+  optional string poster_url = 11;
+  optional string banner_url = 12;
+  optional string trailer_url = 13;
+  repeated string directors = 14;
+  repeated string cast = 15;
+  repeated string genre_ids = 16;
+}
+
+message DeleteMovieRequest {
+  string id = 1;
+}
+
+message DeleteMovieResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListGenresRequest {}
+
+message ListGenresResponse {
+  repeated GenreResponse genres = 1;
+}
+
+// ==========================================
+// Cinemas Messages
+// ==========================================
+
+message CreateCinemaRequest {
+  string name = 1;
+  string city = 2;
+  string address = 3;
+  optional double latitude = 4;
+  optional double longitude = 5;
+  optional string phone_number = 6;
+  repeated string facilities = 7;
+  optional bool is_active = 8;
+}
+
+message GetCinemaByIdRequest {
+  string id = 1;
+}
+
+message GetCinemaBySlugRequest {
+  string slug = 1;
+}
+
+message ListCinemasRequest {
+  optional int32 page = 1;
+  optional int32 limit = 2;
+  optional string city = 3;
+  optional string search = 4;
+  optional bool is_active = 5;
+}
+
+message ListCinemasResponse {
+  repeated CinemaResponse items = 1;
+  PaginationMetadata meta = 2;
+}
+
+message UpdateCinemaRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string city = 3;
+  optional string address = 4;
+  optional double latitude = 5;
+  optional double longitude = 6;
+  optional string phone_number = 7;
+  repeated string facilities = 8;
+  optional bool is_active = 9;
+}
+
+message DeleteCinemaRequest {
+  string id = 1;
+}
+
+message DeleteCinemaResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CreateAuditoriumRequest {
+  string cinema_id = 1;
+  string name = 2;
+  string experience_type = 3;
+  optional string sound_system = 4;
+  int32 total_rows = 5;
+  int32 total_columns = 6;
+  optional bool is_active = 7;
+}
+
+message GetAuditoriumByIdRequest {
+  string id = 1;
+}
+
+message ListAuditoriumsByCinemaRequest {
+  string cinema_id = 1;
+}
+
+message ListAuditoriumsResponse {
+  repeated AuditoriumResponse items = 1;
+}
+
+message UpdateAuditoriumRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string experience_type = 3;
+  optional string sound_system = 4;
+  optional int32 total_rows = 5;
+  optional int32 total_columns = 6;
+  optional bool is_active = 7;
+}
+
+message DeleteAuditoriumRequest {
+  string id = 1;
+}
+
+message DeleteAuditoriumResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ==========================================
+// Seats Messages
+// ==========================================
+
+message SeatDefinitionInput {
+  string row_label = 1;
+  int32 seat_number = 2;
+  int32 grid_row = 3;
+  int32 grid_column = 4;
+  string seat_type = 5;
+  optional bool is_operational = 6;
+}
+
+message GenerateSeatLayoutRequest {
+  string auditorium_id = 1;
+  int32 total_rows = 2;
+  int32 total_columns = 3;
+  repeated SeatDefinitionInput custom_seats = 4;
+}
+
+message GetSeatsByAuditoriumRequest {
+  string auditorium_id = 1;
+}
+
+message UpdateSeatRequest {
+  string id = 1;
+  optional string seat_type = 2;
+  optional bool is_operational = 3;
+}
+
+message BatchSeatUpdateItem {
+  string id = 1;
+  optional string seat_type = 2;
+  optional bool is_operational = 3;
+}
+
+message BatchUpdateSeatsRequest {
+  string auditorium_id = 1;
+  repeated BatchSeatUpdateItem seats = 2;
+}
+
+message BatchUpdateSeatsResponse {
+  bool success = 1;
+  int32 updated_count = 2;
+  string message = 3;
+}
+
+// ==========================================
+// Showtimes Messages
+// ==========================================
+
+message SeatPricingInput {
+  string seat_type = 1;
+  double price = 2;
+}
+
+message CreateShowtimeRequest {
+  string movie_id = 1;
+  string auditorium_id = 2;
+  string start_time = 3;
+  string end_time = 4;
+  string experience_type = 5;
+  double base_price = 6;
+  optional string status = 7;
+  repeated SeatPricingInput custom_pricings = 8;
+}
+
+message GetShowtimeByIdRequest {
+  string id = 1;
+}
+
+message ListShowtimesRequest {
+  optional int32 page = 1;
+  optional int32 limit = 2;
+  optional string movie_id = 3;
+  optional string cinema_id = 4;
+  optional string auditorium_id = 5;
+  optional string date = 6;
+  optional string start_date = 7;
+  optional string end_date = 8;
+  optional string experience_type = 9;
+  optional string status = 10;
+}
+
+message ListShowtimesResponse {
+  repeated ShowtimeDetailsResponse items = 1;
+  PaginationMetadata meta = 2;
+}
+
+message CinemaWithShowtimes {
+  CinemaResponse cinema = 1;
+  repeated ShowtimeDetailsResponse showtimes = 2;
+}
+
+message GetShowtimesGroupedByCinemaRequest {
+  string movie_id = 1;
+  string date = 2;
+  optional string city = 3;
+}
+
+message GroupedShowtimesResponse {
+  string movie_id = 1;
+  string date = 2;
+  repeated CinemaWithShowtimes cinemas = 3;
+}
+
+message UpdateShowtimeRequest {
+  string id = 1;
+  optional string movie_id = 2;
+  optional string auditorium_id = 3;
+  optional string start_time = 4;
+  optional string end_time = 5;
+  optional string experience_type = 6;
+  optional double base_price = 7;
+  optional string status = 8;
+}
+
+message UpdateShowtimeStatusRequest {
+  string id = 1;
+  string status = 2;
+}
+
+message DeleteShowtimeRequest {
+  string id = 1;
+}
+
+message DeleteShowtimeResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message SetShowtimeSeatPricingsRequest {
+  string showtime_id = 1;
+  repeated SeatPricingInput pricings = 2;
+}
