@@ -18,7 +18,8 @@ export class ListCinemasProvider {
 
     const qb = this.cinemaRepository
       .createQueryBuilder('cinema')
-      .leftJoinAndSelect('cinema.auditoriums', 'auditorium');
+      .leftJoinAndSelect('cinema.auditoriums', 'auditorium')
+      .leftJoinAndSelect('cinema.admins', 'admin');
 
     if (query.city && query.city.trim()) {
       qb.andWhere('cinema.city ILIKE :city', {
@@ -33,9 +34,16 @@ export class ListCinemasProvider {
       );
     }
 
-    if (query.isActive !== undefined) {
+    const isActive =
+      query.isActive !== undefined
+        ? query.isActive
+        : (query as any).is_active !== undefined
+          ? (query as any).is_active
+          : undefined;
+
+    if (isActive !== undefined) {
       qb.andWhere('cinema.isActive = :isActive', {
-        isActive: query.isActive,
+        isActive,
       });
     }
 
@@ -50,13 +58,17 @@ export class ListCinemasProvider {
         id: cinema.id,
         name: cinema.name,
         slug: cinema.slug,
+        description: cinema.description || null,
         city: cinema.city,
         address: cinema.address,
         latitude: cinema.latitude ? Number(cinema.latitude) : null,
         longitude: cinema.longitude ? Number(cinema.longitude) : null,
         phone_number: cinema.phoneNumber || null,
         facilities: cinema.facilities || [],
+        thumbnail_url: cinema.thumbnailUrl || null,
+        gallery_urls: cinema.galleryUrls || [],
         is_active: cinema.isActive,
+        admin_user_ids: (cinema.admins || []).map((a) => a.userId),
         auditoriums: (cinema.auditoriums || []).map((a) => ({
           id: a.id,
           cinema_id: a.cinemaId,

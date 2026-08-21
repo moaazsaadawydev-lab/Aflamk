@@ -40,23 +40,60 @@ export class UpdateShowtimeProvider {
       });
     }
 
-    if (dto.movieId !== undefined) showtime.movieId = dto.movieId;
-    if (dto.auditoriumId !== undefined)
-      showtime.auditoriumId = dto.auditoriumId;
-    if (dto.startTime !== undefined)
-      showtime.startTime = new Date(dto.startTime);
-    if (dto.endTime !== undefined) showtime.endTime = new Date(dto.endTime);
-    if (dto.experienceType !== undefined)
-      showtime.experienceType = dto.experienceType;
-    if (dto.basePrice !== undefined) showtime.basePrice = dto.basePrice;
-    if (dto.status !== undefined) showtime.status = dto.status;
+    const auditoriumId = dto.auditoriumId || showtime.auditoriumId;
+    const startTime = dto.startTime ? new Date(dto.startTime) : showtime.startTime;
+    const endTime = dto.endTime ? new Date(dto.endTime) : showtime.endTime;
+    const showtimeStatus = dto.status || showtime.status;
 
-    if (showtime.startTime >= showtime.endTime) {
+    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+      throw new RpcException({
+        code: status.INVALID_ARGUMENT,
+        message: 'Invalid start or end time timestamp',
+      });
+    }
+
+    if (startTime >= endTime) {
       throw new RpcException({
         code: status.INVALID_ARGUMENT,
         message: 'Showtime start time must be before end time',
       });
     }
+
+    // Check overlapping schedule for auditorium including 20-minute cleaning buffer (excluding current showtime)
+    if (showtimeStatus !== ShowtimeStatus.CANCELLED) {
+      const CLEANING_BUFFER_MINUTES = 20;
+      const bufferedStartTime = new Date(startTime.getTime() - CLEANING_BUFFER_MINUTES * 60 * 1000);
+      const bufferedEndTime = new Date(endTime.getTime() + CLEANING_BUFFER_MINUTES * 60 * 1000);
+
+      const overlapping = await this.showtimeRepository
+        .createQueryBuilder('showtime')
+        .where('showtime.auditoriumId = :auditoriumId', { auditoriumId })
+        .andWhere('showtime.status != :cancelledStatus', {
+          cancelledStatus: ShowtimeStatus.CANCELLED,
+        })
+        .andWhere('showtime.id != :currentShowtimeId', { currentShowtimeId: id })
+        .andWhere('showtime.startTime < :bufferedEndTime', { bufferedEndTime })
+        .andWhere('showtime.endTime > :bufferedStartTime', { bufferedStartTime })
+        .getOne();
+
+      if (overlapping) {
+        throw new RpcException({
+          code: status.ALREADY_EXISTS,
+          message:
+            'The selected time slot conflicts with an existing showtime or its required 20-minute cleaning buffer.',
+        });
+      }
+    }
+
+    if (dto.movieId !== undefined) showtime.movieId = dto.movieId;
+    showtime.auditoriumId = auditoriumId;
+    showtime.startTime = startTime;
+    showtime.endTime = endTime;
+    if (dto.experienceType !== undefined)
+      showtime.experienceType = dto.experienceType;
+    if (dto.basePrice !== undefined)
+      showtime.basePrice = Number(dto.basePrice);
+    showtime.status = showtimeStatus;
 
     const updated = await this.showtimeRepository.save(showtime);
     this.logger.log(`Updated showtime ${updated.id}`);
@@ -112,7 +149,7 @@ export class UpdateShowtimeProvider {
       });
     }
 
-    await this.showtimeRepository.remove(showtime);
+    await this.showtimeRepository.softRemove(showtime);
     return {
       success: true,
       message: `Showtime "${id}" deleted successfully`,
@@ -149,6 +186,8 @@ export class UpdateShowtimeProvider {
             original_language: movie.originalLanguage,
             poster_url: movie.posterUrl,
             banner_url: movie.bannerUrl,
+            trailer_url: movie.trailerUrl,
+            gallery_urls: movie.galleryUrls || [],
             rating_average: Number(movie.ratingAverage) || 0,
             rating_count: movie.ratingCount || 0,
           }
@@ -171,10 +210,13 @@ export class UpdateShowtimeProvider {
             id: cinema.id,
             name: cinema.name,
             slug: cinema.slug,
+            description: cinema.description,
             city: cinema.city,
             address: cinema.address,
             latitude: cinema.latitude ? Number(cinema.latitude) : null,
             longitude: cinema.longitude ? Number(cinema.longitude) : null,
+            thumbnail_url: cinema.thumbnailUrl,
+            gallery_urls: cinema.galleryUrls || [],
             is_active: cinema.isActive,
           }
         : null,

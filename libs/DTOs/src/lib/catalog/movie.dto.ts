@@ -75,6 +75,12 @@ export class CreateMovieDto {
   @IsString()
   trailerUrl?: string;
 
+  @Transform(({ obj }) => obj.gallery_urls ?? obj.galleryUrls)
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  galleryUrls?: string[];
+
   @IsArray()
   @IsString({ each: true })
   directors!: string[];
@@ -155,6 +161,12 @@ export class UpdateMovieDto {
   @IsOptional()
   @IsString()
   trailerUrl?: string;
+
+  @Transform(({ obj }) => obj.gallery_urls ?? obj.galleryUrls)
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  galleryUrls?: string[];
 
   @IsOptional()
   @IsArray()

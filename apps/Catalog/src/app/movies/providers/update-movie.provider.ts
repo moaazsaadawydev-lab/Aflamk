@@ -50,27 +50,42 @@ export class UpdateMovieProvider {
       movie.slug = slug;
     }
 
+    const durationMinutes =
+      dto.durationMinutes !== undefined
+        ? Number(dto.durationMinutes)
+        : (dto as any).duration_minutes !== undefined
+          ? Number((dto as any).duration_minutes)
+          : undefined;
+
+    const releaseDate = dto.releaseDate ?? (dto as any).release_date;
+    const ageRating = dto.ageRating ?? (dto as any).age_rating;
+    const originalLanguage = dto.originalLanguage ?? (dto as any).original_language;
+    const spokenLanguages = dto.spokenLanguages ?? (dto as any).spoken_languages;
+    const posterUrl = dto.posterUrl ?? (dto as any).poster_url;
+    const bannerUrl = dto.bannerUrl ?? (dto as any).banner_url;
+    const trailerUrl = dto.trailerUrl ?? (dto as any).trailer_url;
+    const galleryUrls = dto.galleryUrls ?? (dto as any).gallery_urls;
+    const genreIds = dto.genreIds ?? (dto as any).genre_ids;
+
     if (dto.description !== undefined) movie.description = dto.description;
-    if (dto.durationMinutes !== undefined)
-      movie.durationMinutes = dto.durationMinutes;
-    if (dto.releaseDate !== undefined) movie.releaseDate = dto.releaseDate;
-    if (dto.ageRating !== undefined) movie.ageRating = dto.ageRating;
+    if (durationMinutes !== undefined) movie.durationMinutes = durationMinutes;
+    if (releaseDate !== undefined) movie.releaseDate = releaseDate;
+    if (ageRating !== undefined) movie.ageRating = ageRating;
     if (dto.status !== undefined) movie.status = dto.status;
-    if (dto.originalLanguage !== undefined)
-      movie.originalLanguage = dto.originalLanguage;
-    if (dto.spokenLanguages !== undefined)
-      movie.spokenLanguages = dto.spokenLanguages;
+    if (originalLanguage !== undefined) movie.originalLanguage = originalLanguage;
+    if (spokenLanguages !== undefined) movie.spokenLanguages = spokenLanguages;
     if (dto.subtitles !== undefined) movie.subtitles = dto.subtitles;
-    if (dto.posterUrl !== undefined) movie.posterUrl = dto.posterUrl;
-    if (dto.bannerUrl !== undefined) movie.bannerUrl = dto.bannerUrl;
-    if (dto.trailerUrl !== undefined) movie.trailerUrl = dto.trailerUrl;
+    if (posterUrl !== undefined) movie.posterUrl = posterUrl;
+    if (bannerUrl !== undefined) movie.bannerUrl = bannerUrl;
+    if (trailerUrl !== undefined) movie.trailerUrl = trailerUrl;
+    if (galleryUrls !== undefined) movie.galleryUrls = galleryUrls;
     if (dto.directors !== undefined) movie.directors = dto.directors;
     if (dto.cast !== undefined) movie.cast = dto.cast;
 
-    if (dto.genreIds !== undefined) {
-      if (dto.genreIds.length > 0) {
+    if (genreIds !== undefined) {
+      if (genreIds.length > 0) {
         movie.genres = await this.genreRepository.find({
-          where: { id: In(dto.genreIds) },
+          where: { id: In(genreIds) },
         });
       } else {
         movie.genres = [];
@@ -102,6 +117,7 @@ export class UpdateMovieProvider {
       poster_url: movie.posterUrl || null,
       banner_url: movie.bannerUrl || null,
       trailer_url: movie.trailerUrl || null,
+      gallery_urls: movie.galleryUrls || [],
       directors: movie.directors || [],
       cast: movie.cast || [],
       rating_average: Number(movie.ratingAverage) || 0,

@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   Index,
   OneToMany,
@@ -9,8 +10,10 @@ import {
 } from 'typeorm';
 import { TIMESTAMP } from '@booking-ticket-system/Constants';
 import type { Auditorium } from './auditorium.entity';
+import type { CinemaAdmin } from './cinema-admin.entity';
 
 @Entity('cinemas')
+@Index(['slug'], { unique: true, where: 'deleted_at IS NULL' })
 export class Cinema {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -18,8 +21,11 @@ export class Cinema {
   @Column({ type: 'varchar', length: 150, nullable: false })
   name!: string;
 
-  @Column({ type: 'varchar', length: 160, unique: true, nullable: false })
+  @Column({ type: 'varchar', length: 160, nullable: false })
   slug!: string;
+
+  @Column({ type: 'text', nullable: true, default: null })
+  description!: string | null;
 
   @Index()
   @Column({ type: 'varchar', length: 100, nullable: false })
@@ -63,6 +69,24 @@ export class Cinema {
   })
   facilities!: string[] | null;
 
+  @Column({
+    name: 'thumbnail_url',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+    default: null,
+  })
+  thumbnailUrl!: string | null;
+
+  @Column({
+    name: 'gallery_urls',
+    type: 'text',
+    array: true,
+    nullable: false,
+    default: '{}',
+  })
+  galleryUrls!: string[];
+
   @Column({ name: 'is_active', type: 'boolean', default: true, nullable: false })
   isActive!: boolean;
 
@@ -70,6 +94,11 @@ export class Cinema {
     cascade: true,
   })
   auditoriums!: Auditorium[];
+
+  @OneToMany('CinemaAdmin', (admin: CinemaAdmin) => admin.cinema, {
+    cascade: true,
+  })
+  admins!: CinemaAdmin[];
 
   @CreateDateColumn({
     name: 'created_at',
@@ -85,4 +114,12 @@ export class Cinema {
     onUpdate: TIMESTAMP,
   })
   updatedAt!: Date;
+
+  @DeleteDateColumn({
+    name: 'deleted_at',
+    type: 'timestamp',
+    nullable: true,
+    default: null,
+  })
+  deletedAt?: Date | null;
 }

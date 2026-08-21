@@ -68,7 +68,11 @@ export class CreateShowtimeProvider {
       });
     }
 
-    // Check overlapping schedule for auditorium
+    // Check overlapping schedule for auditorium including 20-minute cleaning buffer
+    const CLEANING_BUFFER_MINUTES = 20;
+    const bufferedStartTime = new Date(startTime.getTime() - CLEANING_BUFFER_MINUTES * 60 * 1000);
+    const bufferedEndTime = new Date(endTime.getTime() + CLEANING_BUFFER_MINUTES * 60 * 1000);
+
     const overlapping = await this.showtimeRepository
       .createQueryBuilder('showtime')
       .where('showtime.auditoriumId = :auditoriumId', {
@@ -77,16 +81,15 @@ export class CreateShowtimeProvider {
       .andWhere('showtime.status != :cancelledStatus', {
         cancelledStatus: ShowtimeStatus.CANCELLED,
       })
-      .andWhere(
-        '((showtime.startTime <= :startTime AND showtime.endTime > :startTime) OR (showtime.startTime < :endTime AND showtime.endTime >= :endTime) OR (showtime.startTime >= :startTime AND showtime.endTime <= :endTime))',
-        { startTime, endTime },
-      )
+      .andWhere('showtime.startTime < :bufferedEndTime', { bufferedEndTime })
+      .andWhere('showtime.endTime > :bufferedStartTime', { bufferedStartTime })
       .getOne();
 
     if (overlapping) {
       throw new RpcException({
         code: status.ALREADY_EXISTS,
-        message: `Auditorium "${auditorium.name}" already has an overlapping showtime scheduled between ${overlapping.startTime.toISOString()} and ${overlapping.endTime.toISOString()}`,
+        message:
+          'The selected time slot conflicts with an existing showtime or its required 20-minute cleaning buffer.',
       });
     }
 

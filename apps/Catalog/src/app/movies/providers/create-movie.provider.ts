@@ -43,6 +43,7 @@ export class CreateMovieProvider {
     const posterUrl = dto.posterUrl ?? (dto as any).poster_url ?? null;
     const bannerUrl = dto.bannerUrl ?? (dto as any).banner_url ?? null;
     const trailerUrl = dto.trailerUrl ?? (dto as any).trailer_url ?? null;
+    const galleryUrls = dto.galleryUrls ?? (dto as any).gallery_urls ?? [];
     const directors = dto.directors ?? [];
     const cast = dto.cast ?? [];
 
@@ -60,6 +61,7 @@ export class CreateMovieProvider {
       posterUrl,
       bannerUrl,
       trailerUrl,
+      galleryUrls,
       directors,
       cast,
       genres,
@@ -92,6 +94,7 @@ export class CreateMovieProvider {
       poster_url: movie.posterUrl || null,
       banner_url: movie.bannerUrl || null,
       trailer_url: movie.trailerUrl || null,
+      gallery_urls: movie.galleryUrls || [],
       directors: movie.directors || [],
       cast: movie.cast || [],
       rating_average: Number(movie.ratingAverage) || 0,

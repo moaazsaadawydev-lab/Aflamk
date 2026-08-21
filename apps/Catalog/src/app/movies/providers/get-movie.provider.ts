@@ -77,6 +77,7 @@ export class GetMovieProvider {
       poster_url: movie.posterUrl || null,
       banner_url: movie.bannerUrl || null,
       trailer_url: movie.trailerUrl || null,
+      gallery_urls: movie.galleryUrls || [],
       directors: movie.directors || [],
       cast: movie.cast || [],
       rating_average: Number(movie.ratingAverage) || 0,

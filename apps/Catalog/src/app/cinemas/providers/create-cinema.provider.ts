@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Cinema } from '@booking-ticket-system/Entities';
+import { DataSource, Repository } from 'typeorm';
+import { Cinema, CinemaAdmin } from '@booking-ticket-system/Entities';
 import { CreateCinemaDto } from '@booking-ticket-system/DTOs';
 import { slugify } from '@booking-ticket-system/Utils';
 
@@ -12,6 +12,7 @@ export class CreateCinemaProvider {
   constructor(
     @InjectRepository(Cinema)
     private readonly cinemaRepository: Repository<Cinema>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async execute(dto: CreateCinemaDto): Promise<any> {
@@ -24,22 +25,63 @@ export class CreateCinemaProvider {
       slug = `${slug}-${slugify(dto.city)}-${Date.now().toString().slice(-4)}`;
     }
 
-    const cinema = this.cinemaRepository.create({
-      name: dto.name,
-      slug,
-      city: dto.city,
-      address: dto.address,
-      latitude: dto.latitude ?? null,
-      longitude: dto.longitude ?? null,
-      phoneNumber: dto.phoneNumber ?? null,
-      facilities: dto.facilities || [],
-      isActive: dto.isActive !== undefined ? dto.isActive : true,
-    });
+    const description = dto.description ?? (dto as any).description ?? null;
+    const thumbnailUrl = dto.thumbnailUrl ?? (dto as any).thumbnail_url ?? null;
+    const galleryUrls = dto.galleryUrls ?? (dto as any).gallery_urls ?? [];
+    const phoneNumber = dto.phoneNumber ?? (dto as any).phone_number ?? null;
+    const isActive = dto.isActive !== undefined ? dto.isActive : (dto as any).is_active !== undefined ? (dto as any).is_active : true;
+    const adminUserIds: string[] = dto.adminUserIds ?? (dto as any).admin_user_ids ?? [];
 
-    const saved = await this.cinemaRepository.save(cinema);
-    this.logger.log(`Created cinema "${saved.name}" (ID: ${saved.id})`);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    return this.mapToResponse(saved);
+    try {
+      const cinema = queryRunner.manager.create(Cinema, {
+        name: dto.name,
+        slug,
+        city: dto.city,
+        address: dto.address,
+        description,
+        latitude: dto.latitude ?? null,
+        longitude: dto.longitude ?? null,
+        phoneNumber,
+        facilities: dto.facilities || [],
+        thumbnailUrl,
+        galleryUrls,
+        isActive,
+      });
+
+      const savedCinema = await queryRunner.manager.save(Cinema, cinema);
+
+      if (adminUserIds && adminUserIds.length > 0) {
+        const adminEntities = adminUserIds.map((userId) =>
+          queryRunner.manager.create(CinemaAdmin, {
+            cinemaId: savedCinema.id,
+            userId,
+          }),
+        );
+        await queryRunner.manager.save(CinemaAdmin, adminEntities);
+      }
+
+      await queryRunner.commitTransaction();
+      this.logger.log(`Created cinema "${savedCinema.name}" (ID: ${savedCinema.id})`);
+
+      const fullCinema = await this.cinemaRepository.findOne({
+        where: { id: savedCinema.id },
+        relations: {
+          auditoriums: true,
+          admins: true,
+        },
+      });
+
+      return this.mapToResponse(fullCinema || savedCinema);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   private mapToResponse(cinema: Cinema): any {
@@ -47,13 +89,17 @@ export class CreateCinemaProvider {
       id: cinema.id,
       name: cinema.name,
       slug: cinema.slug,
+      description: cinema.description || null,
       city: cinema.city,
       address: cinema.address,
       latitude: cinema.latitude ? Number(cinema.latitude) : null,
       longitude: cinema.longitude ? Number(cinema.longitude) : null,
       phone_number: cinema.phoneNumber || null,
       facilities: cinema.facilities || [],
+      thumbnail_url: cinema.thumbnailUrl || null,
+      gallery_urls: cinema.galleryUrls || [],
       is_active: cinema.isActive,
+      admin_user_ids: (cinema.admins || []).map((a) => a.userId),
       auditoriums: (cinema.auditoriums || []).map((a) => ({
         id: a.id,
         cinema_id: a.cinemaId,

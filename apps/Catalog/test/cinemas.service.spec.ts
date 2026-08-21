@@ -1,8 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { RpcException } from '@nestjs/microservices';
-import { Auditorium, Cinema, Seat, Showtime } from '@booking-ticket-system/Entities';
+import {
+  Auditorium,
+  Cinema,
+  CinemaAdmin,
+  Seat,
+  Showtime,
+} from '@booking-ticket-system/Entities';
 import { ExperienceType } from '@booking-ticket-system/Utils';
 import { CreateCinemaProvider } from '../src/app/cinemas/providers/create-cinema.provider';
 import { GetCinemaProvider } from '../src/app/cinemas/providers/get-cinema.provider';
@@ -10,11 +16,13 @@ import { ListCinemasProvider } from '../src/app/cinemas/providers/list-cinemas.p
 import { UpdateCinemaProvider } from '../src/app/cinemas/providers/update-cinema.provider';
 import { DeleteCinemaProvider } from '../src/app/cinemas/providers/delete-cinema.provider';
 import { AuditoriumProvider } from '../src/app/cinemas/providers/auditorium.provider';
+import { CinemaAdminProvider } from '../src/app/cinemas/providers/cinema-admin.provider';
 import { CinemasController } from '../src/app/cinemas/cinemas.controller';
 
 describe('Cinemas Domain Suite', () => {
   let cinemasController: CinemasController;
   let cinemaRepository: jest.Mocked<Repository<Cinema>>;
+  let cinemaAdminRepository: jest.Mocked<Repository<CinemaAdmin>>;
   let auditoriumRepository: jest.Mocked<Repository<Auditorium>>;
   let seatRepository: jest.Mocked<Repository<Seat>>;
   let showtimeRepository: jest.Mocked<Repository<Showtime>>;
@@ -40,16 +48,32 @@ describe('Cinemas Domain Suite', () => {
     id: 'cinema-1',
     name: 'Grand Nile Cinema',
     slug: 'grand-nile-cinema',
+    description: 'Premier theater',
     city: 'Cairo',
     address: 'Nile Corniche, Garden City',
     latitude: 30.0444,
     longitude: 31.2357,
     phoneNumber: '+201001234567',
     facilities: ['Parking', 'VIP Lounge', 'Wheelchair Access'],
+    thumbnailUrl: 'http://localhost:9000/media/thumb.jpg',
+    galleryUrls: ['http://localhost:9000/media/g1.jpg'],
     isActive: true,
     auditoriums: [mockAuditorium],
+    admins: [],
     createdAt: new Date(),
     updatedAt: new Date(),
+  };
+
+  const mockQueryRunner: any = {
+    connect: jest.fn().mockResolvedValue(undefined),
+    startTransaction: jest.fn().mockResolvedValue(undefined),
+    commitTransaction: jest.fn().mockResolvedValue(undefined),
+    rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+    release: jest.fn().mockResolvedValue(undefined),
+    manager: {
+      create: jest.fn().mockImplementation((entity, dto) => ({ ...dto, id: 'cinema-1' })),
+      save: jest.fn().mockImplementation((entity, obj) => Promise.resolve(obj)),
+    },
   };
 
   beforeEach(async () => {
@@ -64,6 +88,13 @@ describe('Cinemas Domain Suite', () => {
         UpdateCinemaProvider,
         DeleteCinemaProvider,
         AuditoriumProvider,
+        CinemaAdminProvider,
+        {
+          provide: DataSource,
+          useValue: {
+            createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
+          },
+        },
         {
           provide: getRepositoryToken(Cinema),
           useValue: {
@@ -71,8 +102,18 @@ describe('Cinemas Domain Suite', () => {
             save: jest.fn().mockImplementation((c) => Promise.resolve({ ...c, id: c.id || 'cinema-1' })),
             findOne: jest.fn(),
             find: jest.fn(),
-            remove: jest.fn().mockResolvedValue(undefined),
+            softRemove: jest.fn().mockResolvedValue(undefined),
             createQueryBuilder: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(CinemaAdmin),
+          useValue: {
+            create: jest.fn().mockImplementation((dto) => ({ ...dto, id: 'admin-1' })),
+            save: jest.fn().mockImplementation((a) => Promise.resolve({ ...a, id: a.id || 'admin-1' })),
+            findOne: jest.fn(),
+            find: jest.fn().mockResolvedValue([]),
+            delete: jest.fn().mockResolvedValue({ affected: 1 }),
           },
         },
         {
@@ -82,7 +123,7 @@ describe('Cinemas Domain Suite', () => {
             save: jest.fn().mockImplementation((a) => Promise.resolve({ ...a, id: a.id || 'aud-1' })),
             findOne: jest.fn(),
             find: jest.fn(),
-            remove: jest.fn().mockResolvedValue(undefined),
+            softRemove: jest.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -107,6 +148,7 @@ describe('Cinemas Domain Suite', () => {
 
     cinemasController = module.get<CinemasController>(CinemasController);
     cinemaRepository = module.get(getRepositoryToken(Cinema));
+    cinemaAdminRepository = module.get(getRepositoryToken(CinemaAdmin));
     auditoriumRepository = module.get(getRepositoryToken(Auditorium));
     seatRepository = module.get(getRepositoryToken(Seat));
     showtimeRepository = module.get(getRepositoryToken(Showtime));
@@ -114,7 +156,7 @@ describe('Cinemas Domain Suite', () => {
 
   describe('CreateCinema', () => {
     it('should create cinema and format response', async () => {
-      cinemaRepository.findOne.mockResolvedValue(null);
+      cinemaRepository.findOne.mockResolvedValue(mockCinema);
 
       const result = await cinemasController.createCinema({
         name: 'Grand Nile Cinema',
@@ -124,7 +166,7 @@ describe('Cinemas Domain Suite', () => {
 
       expect(result.name).toBe('Grand Nile Cinema');
       expect(result.slug).toBe('grand-nile-cinema');
-      expect(cinemaRepository.save).toHaveBeenCalled();
+      expect(mockQueryRunner.manager.save).toHaveBeenCalled();
     });
   });
 
@@ -192,12 +234,53 @@ describe('Cinemas Domain Suite', () => {
   });
 
   describe('DeleteCinema', () => {
-    it('should delete cinema when no active showtimes exist', async () => {
+    it('should soft-delete cinema when no active showtimes exist', async () => {
       cinemaRepository.findOne.mockResolvedValue(mockCinema);
 
       const result = await cinemasController.deleteCinema({ id: 'cinema-1' });
       expect(result.success).toBe(true);
-      expect(cinemaRepository.remove).toHaveBeenCalled();
+      expect(cinemaRepository.softRemove).toHaveBeenCalled();
+    });
+  });
+
+  describe('Cinema Admin Operations', () => {
+    it('should assign a cinema admin', async () => {
+      cinemaRepository.findOne.mockResolvedValue(mockCinema);
+      cinemaAdminRepository.findOne.mockResolvedValue(null);
+
+      const result = await cinemasController.assignCinemaAdmin({
+        cinema_id: 'cinema-1',
+        user_id: 'user-123',
+      });
+
+      expect(result.cinema_id).toBe('cinema-1');
+      expect(result.user_id).toBe('user-123');
+      expect(cinemaAdminRepository.save).toHaveBeenCalled();
+    });
+
+    it('should remove a cinema admin', async () => {
+      const result = await cinemasController.removeCinemaAdmin({
+        cinema_id: 'cinema-1',
+        user_id: 'user-123',
+      });
+
+      expect(result.success).toBe(true);
+      expect(cinemaAdminRepository.delete).toHaveBeenCalledWith({
+        cinemaId: 'cinema-1',
+        userId: 'user-123',
+      });
+    });
+
+    it('should get all cinema admins', async () => {
+      cinemaAdminRepository.find.mockResolvedValue([
+        { id: 'admin-1', cinemaId: 'cinema-1', userId: 'user-123', createdAt: new Date() } as CinemaAdmin,
+      ]);
+
+      const result = await cinemasController.getCinemaAdmins({
+        cinema_id: 'cinema-1',
+      });
+
+      expect(result.admin_user_ids).toEqual(['user-123']);
     });
   });
 
@@ -245,12 +328,13 @@ describe('Cinemas Domain Suite', () => {
       expect(result.name).toBe('Hall 1 IMAX 4K');
     });
 
-    it('should delete auditorium when no showtimes exist', async () => {
+    it('should soft-delete auditorium when no showtimes exist', async () => {
       auditoriumRepository.findOne.mockResolvedValue(mockAuditorium);
       showtimeRepository.count.mockResolvedValue(0);
 
       const result = await cinemasController.deleteAuditorium({ id: 'aud-1' });
       expect(result.success).toBe(true);
+      expect(auditoriumRepository.softRemove).toHaveBeenCalled();
     });
   });
 });

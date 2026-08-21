@@ -44,8 +44,8 @@ export class DeleteMovieProvider {
       });
     }
 
-    await this.movieRepository.remove(movie);
-    this.logger.log(`Deleted movie "${movie.title}" (ID: ${movie.id})`);
+    await this.movieRepository.softRemove(movie);
+    this.logger.log(`Soft-deleted movie "${movie.title}" (ID: ${movie.id})`);
 
     return {
       success: true,

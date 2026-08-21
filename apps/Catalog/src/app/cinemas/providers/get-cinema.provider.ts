@@ -22,7 +22,7 @@ export class GetCinemaProvider {
 
     const cinema = await this.cinemaRepository.findOne({
       where: { id },
-      relations: { auditoriums: true },
+      relations: { auditoriums: true, admins: true },
     });
 
     if (!cinema) {
@@ -45,7 +45,7 @@ export class GetCinemaProvider {
 
     const cinema = await this.cinemaRepository.findOne({
       where: { slug },
-      relations: { auditoriums: true },
+      relations: { auditoriums: true, admins: true },
     });
 
     if (!cinema) {
@@ -63,13 +63,17 @@ export class GetCinemaProvider {
       id: cinema.id,
       name: cinema.name,
       slug: cinema.slug,
+      description: cinema.description || null,
       city: cinema.city,
       address: cinema.address,
       latitude: cinema.latitude ? Number(cinema.latitude) : null,
       longitude: cinema.longitude ? Number(cinema.longitude) : null,
       phone_number: cinema.phoneNumber || null,
       facilities: cinema.facilities || [],
+      thumbnail_url: cinema.thumbnailUrl || null,
+      gallery_urls: cinema.galleryUrls || [],
       is_active: cinema.isActive,
+      admin_user_ids: (cinema.admins || []).map((a) => a.userId),
       auditoriums: (cinema.auditoriums || []).map((a) => ({
         id: a.id,
         cinema_id: a.cinemaId,

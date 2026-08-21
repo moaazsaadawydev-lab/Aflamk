@@ -51,6 +51,7 @@ export class CatalogProvider implements OnModuleInit {
     const posterUrl = dto.posterUrl ?? (dto as any).poster_url ?? null;
     const bannerUrl = dto.bannerUrl ?? (dto as any).banner_url ?? null;
     const trailerUrl = dto.trailerUrl ?? (dto as any).trailer_url ?? null;
+    const galleryUrls = dto.galleryUrls ?? (dto as any).gallery_urls ?? [];
     const directors = dto.directors ?? [];
     const cast = dto.cast ?? [];
     const genreIds = dto.genreIds ?? (dto as any).genre_ids ?? [];
@@ -77,6 +78,8 @@ export class CatalogProvider implements OnModuleInit {
         banner_url: bannerUrl,
         trailerUrl,
         trailer_url: trailerUrl,
+        galleryUrls,
+        gallery_urls: galleryUrls,
         directors,
         cast,
         genreIds,
@@ -139,6 +142,8 @@ export class CatalogProvider implements OnModuleInit {
         banner_url: dto.bannerUrl ?? (dto as any).banner_url,
         trailerUrl: dto.trailerUrl ?? (dto as any).trailer_url,
         trailer_url: dto.trailerUrl ?? (dto as any).trailer_url,
+        galleryUrls: dto.galleryUrls ?? (dto as any).gallery_urls,
+        gallery_urls: dto.galleryUrls ?? (dto as any).gallery_urls,
         directors: dto.directors,
         cast: dto.cast,
         genreIds: dto.genreIds ?? (dto as any).genre_ids,
@@ -158,20 +163,31 @@ export class CatalogProvider implements OnModuleInit {
   // --- Cinemas ---
   async createCinema(dto: CreateCinemaDto) {
     const phoneNumber = dto.phoneNumber ?? (dto as any).phone_number ?? null;
+    const description = dto.description ?? (dto as any).description ?? null;
+    const thumbnailUrl = dto.thumbnailUrl ?? (dto as any).thumbnail_url ?? null;
+    const galleryUrls = dto.galleryUrls ?? (dto as any).gallery_urls ?? [];
     const isActive = dto.isActive !== undefined ? dto.isActive : (dto as any).is_active;
+    const adminUserIds = dto.adminUserIds ?? (dto as any).admin_user_ids ?? [];
 
     return await lastValueFrom(
       this.cinemasService.CreateCinema({
         name: dto.name,
         city: dto.city,
         address: dto.address,
+        description,
         latitude: dto.latitude,
         longitude: dto.longitude,
         phoneNumber,
         phone_number: phoneNumber,
         facilities: dto.facilities || [],
+        thumbnailUrl,
+        thumbnail_url: thumbnailUrl,
+        galleryUrls,
+        gallery_urls: galleryUrls,
         isActive: isActive !== undefined ? isActive : true,
         is_active: isActive !== undefined ? isActive : true,
+        adminUserIds,
+        admin_user_ids: adminUserIds,
       }),
     );
   }
@@ -202,6 +218,9 @@ export class CatalogProvider implements OnModuleInit {
 
   async updateCinema(id: string, dto: UpdateCinemaDto) {
     const phoneNumber = dto.phoneNumber ?? (dto as any).phone_number;
+    const description = dto.description ?? (dto as any).description;
+    const thumbnailUrl = dto.thumbnailUrl ?? (dto as any).thumbnail_url;
+    const galleryUrls = dto.galleryUrls ?? (dto as any).gallery_urls;
     const isActive = dto.isActive !== undefined ? dto.isActive : (dto as any).is_active;
 
     return await lastValueFrom(
@@ -210,11 +229,16 @@ export class CatalogProvider implements OnModuleInit {
         name: dto.name,
         city: dto.city,
         address: dto.address,
+        description,
         latitude: dto.latitude,
         longitude: dto.longitude,
         phoneNumber,
         phone_number: phoneNumber,
         facilities: dto.facilities,
+        thumbnailUrl,
+        thumbnail_url: thumbnailUrl,
+        galleryUrls,
+        gallery_urls: galleryUrls,
         isActive,
         is_active: isActive,
       }),
@@ -302,6 +326,37 @@ export class CatalogProvider implements OnModuleInit {
 
   async deleteAuditorium(id: string) {
     return await lastValueFrom(this.cinemasService.DeleteAuditorium({ id }));
+  }
+
+  async assignCinemaAdmin(cinemaId: string, userId: string) {
+    return await lastValueFrom(
+      this.cinemasService.AssignCinemaAdmin({
+        cinemaId,
+        cinema_id: cinemaId,
+        userId,
+        user_id: userId,
+      }),
+    );
+  }
+
+  async removeCinemaAdmin(cinemaId: string, userId: string) {
+    return await lastValueFrom(
+      this.cinemasService.RemoveCinemaAdmin({
+        cinemaId,
+        cinema_id: cinemaId,
+        userId,
+        user_id: userId,
+      }),
+    );
+  }
+
+  async getCinemaAdmins(cinemaId: string) {
+    return await lastValueFrom(
+      this.cinemasService.GetCinemaAdmins({
+        cinemaId,
+        cinema_id: cinemaId,
+      }),
+    );
   }
 
   // --- Seats ---
@@ -513,7 +568,11 @@ export class CatalogProvider implements OnModuleInit {
 
   async setShowtimeSeatPricings(dto: SetShowtimeSeatPricingsDto) {
     const showtimeId = dto.showtimeId ?? (dto as any).showtime_id;
-    const pricings = (dto.pricings || []).map((p: any) => ({
+    const rawPricings = Array.isArray(dto)
+      ? dto
+      : dto.pricings ?? (dto as any).custom_pricings ?? (dto as any).customPricings ?? [];
+
+    const pricings = (rawPricings || []).map((p: any) => ({
       seatType: p.seatType ?? p.seat_type,
       seat_type: p.seatType ?? p.seat_type,
       price: Number(p.price),

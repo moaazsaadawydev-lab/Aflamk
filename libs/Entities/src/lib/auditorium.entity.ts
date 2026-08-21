@@ -1,7 +1,9 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -15,6 +17,7 @@ import type { Seat } from './seat.entity';
 import type { Showtime } from './showtime.entity';
 
 @Entity('auditoriums')
+@Index(['cinemaId', 'name'], { unique: true, where: 'deleted_at IS NULL' })
 export class Auditorium {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -85,4 +88,12 @@ export class Auditorium {
     onUpdate: TIMESTAMP,
   })
   updatedAt!: Date;
+
+  @DeleteDateColumn({
+    name: 'deleted_at',
+    type: 'timestamp',
+    nullable: true,
+    default: null,
+  })
+  deletedAt?: Date | null;
 }

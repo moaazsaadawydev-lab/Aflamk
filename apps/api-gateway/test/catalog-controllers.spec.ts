@@ -5,7 +5,10 @@ import {
   CatalogSeatsController,
   CatalogShowtimesController,
 } from '../src/app/api-gateway-service/Controllers/Catalog';
-import { CatalogProvider } from '../src/app/api-gateway-service/providers';
+import {
+  CatalogProvider,
+  UserProfileProvider,
+} from '../src/app/api-gateway-service/providers';
 import { JwtAuthGuard, RolesGuard } from '@booking-ticket-system/Guards';
 import {
   CreateCinemaDto,
@@ -18,7 +21,9 @@ import {
   MovieStatus,
   SeatType,
   ShowtimeStatus,
+  UserRole,
 } from '@booking-ticket-system/Utils';
+import { Users } from '@booking-ticket-system/Entities';
 
 describe('API Gateway Catalog Controllers Suite', () => {
   let moviesController: CatalogMoviesController;
@@ -26,6 +31,7 @@ describe('API Gateway Catalog Controllers Suite', () => {
   let seatsController: CatalogSeatsController;
   let showtimesController: CatalogShowtimesController;
   let catalogProvider: jest.Mocked<CatalogProvider>;
+  let userProfileProvider: jest.Mocked<UserProfileProvider>;
 
   const mockCatalogProvider = {
     createMovie: jest.fn(),
@@ -46,6 +52,9 @@ describe('API Gateway Catalog Controllers Suite', () => {
     listAuditoriumsByCinema: jest.fn(),
     updateAuditorium: jest.fn(),
     deleteAuditorium: jest.fn(),
+    assignCinemaAdmin: jest.fn(),
+    removeCinemaAdmin: jest.fn(),
+    getCinemaAdmins: jest.fn(),
     generateSeatLayout: jest.fn(),
     getSeatsByAuditorium: jest.fn(),
     updateSeat: jest.fn(),
@@ -58,6 +67,10 @@ describe('API Gateway Catalog Controllers Suite', () => {
     updateShowtimeStatus: jest.fn(),
     deleteShowtime: jest.fn(),
     setShowtimeSeatPricings: jest.fn(),
+  };
+
+  const mockUserProfileProvider = {
+    getUserById: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -75,6 +88,10 @@ describe('API Gateway Catalog Controllers Suite', () => {
           provide: CatalogProvider,
           useValue: mockCatalogProvider,
         },
+        {
+          provide: UserProfileProvider,
+          useValue: mockUserProfileProvider,
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -88,6 +105,7 @@ describe('API Gateway Catalog Controllers Suite', () => {
     seatsController = module.get<CatalogSeatsController>(CatalogSeatsController);
     showtimesController = module.get<CatalogShowtimesController>(CatalogShowtimesController);
     catalogProvider = module.get(CatalogProvider);
+    userProfileProvider = module.get(UserProfileProvider);
   });
 
   describe('CatalogMoviesController', () => {
@@ -141,11 +159,55 @@ describe('API Gateway Catalog Controllers Suite', () => {
       };
       mockCatalogProvider.createAuditorium.mockResolvedValue({ id: 'aud-1', ...dto });
 
-      await cinemasController.createAuditorium('cinema-1', dto);
+      await cinemasController.createAuditorium('cinema-1', dto, { id: 'admin-1', role: UserRole.ADMIN } as Users);
       expect(catalogProvider.createAuditorium).toHaveBeenCalledWith({
         ...dto,
         cinemaId: 'cinema-1',
       });
+    });
+
+    it('should validate role and assign cinema admin', async () => {
+      mockUserProfileProvider.getUserById.mockResolvedValue({
+        id: 'user-123',
+        role: UserRole.CINEMA_ADMIN,
+      });
+      mockCatalogProvider.assignCinemaAdmin.mockResolvedValue({
+        id: 'admin-link-1',
+        cinema_id: 'cinema-1',
+        user_id: 'user-123',
+      });
+
+      const result: any = await cinemasController.assignCinemaAdmin('cinema-1', {
+        userId: 'user-123',
+      });
+
+      expect(userProfileProvider.getUserById).toHaveBeenCalledWith('user-123');
+      expect(catalogProvider.assignCinemaAdmin).toHaveBeenCalledWith('cinema-1', 'user-123');
+      expect(result.cinema_id).toBe('cinema-1');
+    });
+
+    it('should remove cinema admin', async () => {
+      mockCatalogProvider.removeCinemaAdmin.mockResolvedValue({
+        success: true,
+        message: 'Admin removed successfully',
+      });
+
+      const result: any = await cinemasController.removeCinemaAdmin('cinema-1', 'user-123');
+      expect(catalogProvider.removeCinemaAdmin).toHaveBeenCalledWith('cinema-1', 'user-123');
+      expect(result.success).toBe(true);
+    });
+
+    it('should get cinema admins for admin user', async () => {
+      mockCatalogProvider.getCinemaAdmins.mockResolvedValue({
+        admin_user_ids: ['user-123'],
+      });
+
+      const result: any = await cinemasController.getCinemaAdmins('cinema-1', {
+        id: 'super-admin',
+        role: UserRole.SUPER_ADMIN,
+      } as Users);
+
+      expect(result.admin_user_ids).toEqual(['user-123']);
     });
   });
 

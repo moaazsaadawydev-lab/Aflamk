@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   Index,
   JoinTable,
@@ -15,6 +16,7 @@ import type { Genre } from './genre.entity';
 import type { Showtime } from './showtime.entity';
 
 @Entity('movies')
+@Index(['slug'], { unique: true, where: 'deleted_at IS NULL' })
 export class Movie {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -23,7 +25,7 @@ export class Movie {
   @Column({ type: 'varchar', length: 255, nullable: false })
   title!: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true, nullable: false })
+  @Column({ type: 'varchar', length: 255, nullable: false })
   slug!: string;
 
   @Column({ type: 'text', nullable: false })
@@ -80,6 +82,15 @@ export class Movie {
   @Column({ name: 'trailer_url', type: 'varchar', length: 500, nullable: true, default: null })
   trailerUrl!: string | null;
 
+  @Column({
+    name: 'gallery_urls',
+    type: 'text',
+    array: true,
+    nullable: false,
+    default: '{}',
+  })
+  galleryUrls!: string[];
+
   @Column({ type: 'text', array: true, nullable: false, default: '{}' })
   directors!: string[];
 
@@ -123,4 +134,12 @@ export class Movie {
     onUpdate: TIMESTAMP,
   })
   updatedAt!: Date;
+
+  @DeleteDateColumn({
+    name: 'deleted_at',
+    type: 'timestamp',
+    nullable: true,
+    default: null,
+  })
+  deletedAt?: Date | null;
 }

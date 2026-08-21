@@ -27,6 +27,10 @@ export class CreateCinemaDto {
   address!: string;
 
   @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   latitude?: number;
@@ -46,10 +50,27 @@ export class CreateCinemaDto {
   @IsString({ each: true })
   facilities?: string[];
 
+  @Transform(({ obj }) => obj.thumbnail_url ?? obj.thumbnailUrl)
+  @IsOptional()
+  @IsString()
+  thumbnailUrl?: string;
+
+  @Transform(({ obj }) => obj.gallery_urls ?? obj.galleryUrls)
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  galleryUrls?: string[];
+
   @Transform(({ obj }) => obj.is_active ?? obj.isActive)
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @Transform(({ obj }) => obj.admin_user_ids ?? obj.adminUserIds)
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  adminUserIds?: string[];
 }
 
 export class UpdateCinemaDto {
@@ -66,6 +87,10 @@ export class UpdateCinemaDto {
   address?: string;
 
   @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   latitude?: number;
@@ -84,6 +109,17 @@ export class UpdateCinemaDto {
   @IsArray()
   @IsString({ each: true })
   facilities?: string[];
+
+  @Transform(({ obj }) => obj.thumbnail_url ?? obj.thumbnailUrl)
+  @IsOptional()
+  @IsString()
+  thumbnailUrl?: string;
+
+  @Transform(({ obj }) => obj.gallery_urls ?? obj.galleryUrls)
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  galleryUrls?: string[];
 
   @Transform(({ obj }) => obj.is_active ?? obj.isActive)
   @IsOptional()
@@ -207,4 +243,11 @@ export class UpdateAuditoriumDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+}
+
+export class AssignCinemaAdminDto {
+  @Transform(({ obj }) => obj.user_id ?? obj.userId)
+  @IsUUID('4')
+  @IsNotEmpty()
+  userId!: string;
 }

@@ -13,6 +13,7 @@ import { ListCinemasProvider } from './providers/list-cinemas.provider';
 import { UpdateCinemaProvider } from './providers/update-cinema.provider';
 import { DeleteCinemaProvider } from './providers/delete-cinema.provider';
 import { AuditoriumProvider } from './providers/auditorium.provider';
+import { CinemaAdminProvider } from './providers/cinema-admin.provider';
 
 @Controller()
 export class CinemasController {
@@ -23,6 +24,7 @@ export class CinemasController {
     private readonly updateCinemaProvider: UpdateCinemaProvider,
     private readonly deleteCinemaProvider: DeleteCinemaProvider,
     private readonly auditoriumProvider: AuditoriumProvider,
+    private readonly cinemaAdminProvider: CinemaAdminProvider,
   ) {}
 
   @GrpcMethod('CinemasService', 'CreateCinema')
@@ -31,11 +33,15 @@ export class CinemasController {
       name: data.name,
       city: data.city,
       address: data.address,
+      description: data.description,
       latitude: data.latitude,
       longitude: data.longitude,
       phoneNumber: data.phoneNumber || data.phone_number,
       facilities: data.facilities || [],
+      thumbnailUrl: data.thumbnailUrl || data.thumbnail_url,
+      galleryUrls: data.galleryUrls || data.gallery_urls || [],
       isActive: data.isActive !== undefined ? data.isActive : data.is_active,
+      adminUserIds: data.adminUserIds || data.admin_user_ids || [],
     };
     return await this.createCinemaProvider.execute(dto);
   }
@@ -69,10 +75,13 @@ export class CinemasController {
       name: data.name,
       city: data.city,
       address: data.address,
+      description: data.description,
       latitude: data.latitude,
       longitude: data.longitude,
       phoneNumber: data.phoneNumber || data.phone_number,
       facilities: data.facilities,
+      thumbnailUrl: data.thumbnailUrl || data.thumbnail_url,
+      galleryUrls: data.galleryUrls || data.gallery_urls,
       isActive: data.isActive !== undefined ? data.isActive : data.is_active,
     };
     return await this.updateCinemaProvider.execute(id, dto);
@@ -125,5 +134,25 @@ export class CinemasController {
   @GrpcMethod('CinemasService', 'DeleteAuditorium')
   async deleteAuditorium(@Payload() data: any): Promise<any> {
     return await this.auditoriumProvider.delete(data.id);
+  }
+
+  @GrpcMethod('CinemasService', 'AssignCinemaAdmin')
+  async assignCinemaAdmin(@Payload() data: any): Promise<any> {
+    const cinemaId = data.cinemaId || data.cinema_id;
+    const userId = data.userId || data.user_id;
+    return await this.cinemaAdminProvider.assignAdmin(cinemaId, userId);
+  }
+
+  @GrpcMethod('CinemasService', 'RemoveCinemaAdmin')
+  async removeCinemaAdmin(@Payload() data: any): Promise<any> {
+    const cinemaId = data.cinemaId || data.cinema_id;
+    const userId = data.userId || data.user_id;
+    return await this.cinemaAdminProvider.removeAdmin(cinemaId, userId);
+  }
+
+  @GrpcMethod('CinemasService', 'GetCinemaAdmins')
+  async getCinemaAdmins(@Payload() data: any): Promise<any> {
+    const cinemaId = data.cinemaId || data.cinema_id;
+    return await this.cinemaAdminProvider.getAdmins(cinemaId);
   }
 }

@@ -53,8 +53,8 @@ export class DeleteCinemaProvider {
       }
     }
 
-    await this.cinemaRepository.remove(cinema);
-    this.logger.log(`Deleted cinema "${cinema.name}" (ID: ${cinema.id})`);
+    await this.cinemaRepository.softRemove(cinema);
+    this.logger.log(`Soft-deleted cinema "${cinema.name}" (ID: ${cinema.id})`);
 
     return {
       success: true,

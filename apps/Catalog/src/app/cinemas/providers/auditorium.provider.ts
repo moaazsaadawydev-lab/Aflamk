@@ -181,7 +181,7 @@ export class AuditoriumProvider {
       });
     }
 
-    await this.auditoriumRepository.remove(auditorium);
+    await this.auditoriumRepository.softRemove(auditorium);
     return {
       success: true,
       message: `Auditorium "${auditorium.name}" deleted successfully`,

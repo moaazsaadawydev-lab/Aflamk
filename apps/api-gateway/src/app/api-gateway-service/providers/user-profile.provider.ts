@@ -32,6 +32,12 @@ export class UserProfileProvider implements OnModuleInit {
     return userProfile;
   }
 
+  async getUserById(userId: string) {
+    return await lastValueFrom(
+      this.usersService.CurrentUser({ id: userId }),
+    );
+  }
+
   async updateProfile(
     user: Users,
     body: UpdateUserProfileDto,

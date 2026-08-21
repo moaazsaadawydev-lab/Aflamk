@@ -26,7 +26,7 @@ export class UpdateCinemaProvider {
 
     const cinema = await this.cinemaRepository.findOne({
       where: { id },
-      relations: { auditoriums: true },
+      relations: { auditoriums: true, admins: true },
     });
 
     if (!cinema) {
@@ -48,13 +48,27 @@ export class UpdateCinemaProvider {
       cinema.slug = slug;
     }
 
+    const description = dto.description ?? (dto as any).description;
+    const thumbnailUrl = dto.thumbnailUrl ?? (dto as any).thumbnail_url;
+    const galleryUrls = dto.galleryUrls ?? (dto as any).gallery_urls;
+    const phoneNumber = dto.phoneNumber ?? (dto as any).phone_number;
+    const isActive =
+      dto.isActive !== undefined
+        ? dto.isActive
+        : (dto as any).is_active !== undefined
+          ? (dto as any).is_active
+          : undefined;
+
     if (dto.city !== undefined) cinema.city = dto.city;
     if (dto.address !== undefined) cinema.address = dto.address;
+    if (description !== undefined) cinema.description = description;
     if (dto.latitude !== undefined) cinema.latitude = dto.latitude;
     if (dto.longitude !== undefined) cinema.longitude = dto.longitude;
-    if (dto.phoneNumber !== undefined) cinema.phoneNumber = dto.phoneNumber;
+    if (phoneNumber !== undefined) cinema.phoneNumber = phoneNumber;
     if (dto.facilities !== undefined) cinema.facilities = dto.facilities;
-    if (dto.isActive !== undefined) cinema.isActive = dto.isActive;
+    if (thumbnailUrl !== undefined) cinema.thumbnailUrl = thumbnailUrl;
+    if (galleryUrls !== undefined) cinema.galleryUrls = galleryUrls;
+    if (isActive !== undefined) cinema.isActive = isActive;
 
     const updated = await this.cinemaRepository.save(cinema);
     this.logger.log(`Updated cinema "${updated.name}" (ID: ${updated.id})`);
@@ -63,13 +77,17 @@ export class UpdateCinemaProvider {
       id: updated.id,
       name: updated.name,
       slug: updated.slug,
+      description: updated.description || null,
       city: updated.city,
       address: updated.address,
       latitude: updated.latitude ? Number(updated.latitude) : null,
       longitude: updated.longitude ? Number(updated.longitude) : null,
       phone_number: updated.phoneNumber || null,
       facilities: updated.facilities || [],
+      thumbnail_url: updated.thumbnailUrl || null,
+      gallery_urls: updated.galleryUrls || [],
       is_active: updated.isActive,
+      admin_user_ids: (updated.admins || []).map((a) => a.userId),
       auditoriums: (updated.auditoriums || []).map((a) => ({
         id: a.id,
         cinema_id: a.cinemaId,

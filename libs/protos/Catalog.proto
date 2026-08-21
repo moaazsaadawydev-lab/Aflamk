@@ -29,6 +29,10 @@ service CinemasService {
   rpc ListAuditoriumsByCinema(ListAuditoriumsByCinemaRequest) returns (ListAuditoriumsResponse) {}
   rpc UpdateAuditorium(UpdateAuditoriumRequest) returns (AuditoriumResponse) {}
   rpc DeleteAuditorium(DeleteAuditoriumRequest) returns (DeleteAuditoriumResponse) {}
+
+  rpc AssignCinemaAdmin(AssignCinemaAdminRequest) returns (CinemaAdminResponse) {}
+  rpc RemoveCinemaAdmin(RemoveCinemaAdminRequest) returns (EmptyResponse) {}
+  rpc GetCinemaAdmins(GetCinemaAdminsRequest) returns (CinemaAdminsListResponse) {}
 }
 
 service SeatsService {
@@ -131,29 +135,34 @@ message MovieResponse {
   optional string poster_url = 12;
   optional string banner_url = 13;
   optional string trailer_url = 14;
-  repeated string directors = 15;
-  repeated string cast = 16;
-  float rating_average = 17;
-  int32 rating_count = 18;
-  repeated GenreResponse genres = 19;
-  string created_at = 20;
-  string updated_at = 21;
+  repeated string gallery_urls = 15;
+  repeated string directors = 16;
+  repeated string cast = 17;
+  float rating_average = 18;
+  int32 rating_count = 19;
+  repeated GenreResponse genres = 20;
+  string created_at = 21;
+  string updated_at = 22;
 }
 
 message CinemaResponse {
   string id = 1;
   string name = 2;
   string slug = 3;
-  string city = 4;
-  string address = 5;
-  optional double latitude = 6;
-  optional double longitude = 7;
-  optional string phone_number = 8;
-  repeated string facilities = 9;
-  bool is_active = 10;
-  repeated AuditoriumResponse auditoriums = 11;
-  string created_at = 12;
-  string updated_at = 13;
+  optional string description = 4;
+  string city = 5;
+  string address = 6;
+  optional double latitude = 7;
+  optional double longitude = 8;
+  optional string phone_number = 9;
+  repeated string facilities = 10;
+  optional string thumbnail_url = 11;
+  repeated string gallery_urls = 12;
+  bool is_active = 13;
+  repeated string admin_user_ids = 14;
+  repeated AuditoriumResponse auditoriums = 15;
+  string created_at = 16;
+  string updated_at = 17;
 }
 
 message AuditoriumResponse {
@@ -234,9 +243,10 @@ message CreateMovieRequest {
   optional string poster_url = 10;
   optional string banner_url = 11;
   optional string trailer_url = 12;
-  repeated string directors = 13;
-  repeated string cast = 14;
-  repeated string genre_ids = 15;
+  repeated string gallery_urls = 13;
+  repeated string directors = 14;
+  repeated string cast = 15;
+  repeated string genre_ids = 16;
 }
 
 message GetMovieByIdRequest {
@@ -275,9 +285,10 @@ message UpdateMovieRequest {
   optional string poster_url = 11;
   optional string banner_url = 12;
   optional string trailer_url = 13;
-  repeated string directors = 14;
-  repeated string cast = 15;
-  repeated string genre_ids = 16;
+  repeated string gallery_urls = 14;
+  repeated string directors = 15;
+  repeated string cast = 16;
+  repeated string genre_ids = 17;
 }
 
 message DeleteMovieRequest {
@@ -303,11 +314,15 @@ message CreateCinemaRequest {
   string name = 1;
   string city = 2;
   string address = 3;
-  optional double latitude = 4;
-  optional double longitude = 5;
-  optional string phone_number = 6;
-  repeated string facilities = 7;
-  optional bool is_active = 8;
+  optional string description = 4;
+  optional double latitude = 5;
+  optional double longitude = 6;
+  optional string phone_number = 7;
+  repeated string facilities = 8;
+  optional string thumbnail_url = 9;
+  repeated string gallery_urls = 10;
+  optional bool is_active = 11;
+  repeated string admin_user_ids = 12;
 }
 
 message GetCinemaByIdRequest {
@@ -336,11 +351,14 @@ message UpdateCinemaRequest {
   optional string name = 2;
   optional string city = 3;
   optional string address = 4;
-  optional double latitude = 5;
-  optional double longitude = 6;
-  optional string phone_number = 7;
-  repeated string facilities = 8;
-  optional bool is_active = 9;
+  optional string description = 5;
+  optional double latitude = 6;
+  optional double longitude = 7;
+  optional string phone_number = 8;
+  repeated string facilities = 9;
+  optional string thumbnail_url = 10;
+  repeated string gallery_urls = 11;
+  optional bool is_active = 12;
 }
 
 message DeleteCinemaRequest {
@@ -389,6 +407,36 @@ message DeleteAuditoriumRequest {
 }
 
 message DeleteAuditoriumResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message AssignCinemaAdminRequest {
+  string cinema_id = 1;
+  string user_id = 2;
+}
+
+message RemoveCinemaAdminRequest {
+  string cinema_id = 1;
+  string user_id = 2;
+}
+
+message CinemaAdminResponse {
+  string id = 1;
+  string cinema_id = 2;
+  string user_id = 3;
+  string created_at = 4;
+}
+
+message GetCinemaAdminsRequest {
+  string cinema_id = 1;
+}
+
+message CinemaAdminsListResponse {
+  repeated string admin_user_ids = 1;
+}
+
+message EmptyResponse {
   bool success = 1;
   string message = 2;
 }

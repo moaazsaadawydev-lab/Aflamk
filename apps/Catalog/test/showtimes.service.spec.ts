@@ -36,14 +36,18 @@ describe('Showtimes Domain Suite', () => {
     id: 'cinema-1',
     name: 'Grand Nile Cinema',
     slug: 'grand-nile-cinema',
+    description: 'Premier theater',
     city: 'Cairo',
     address: 'Nile Corniche',
     latitude: 30.0,
     longitude: 31.0,
     phoneNumber: null,
     facilities: [],
+    thumbnailUrl: null,
+    galleryUrls: [],
     isActive: true,
     auditoriums: [],
+    admins: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -80,6 +84,7 @@ describe('Showtimes Domain Suite', () => {
     posterUrl: null,
     bannerUrl: null,
     trailerUrl: null,
+    galleryUrls: [],
     directors: ['Christopher Nolan'],
     cast: ['Leonardo DiCaprio'],
     ratingAverage: 4.8,
@@ -204,11 +209,11 @@ describe('Showtimes Domain Suite', () => {
       expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
     });
 
-    it('should reject creation if overlapping showtime exists', async () => {
+    it('should reject creation if overlapping showtime or 20-minute cleaning buffer conflicts', async () => {
       const qbMock: any = {
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(mockShowtime), // overlap found
+        getOne: jest.fn().mockResolvedValue(mockShowtime), // overlap/buffer conflict found
       };
       showtimeRepository.createQueryBuilder.mockReturnValue(qbMock);
 
@@ -216,8 +221,8 @@ describe('Showtimes Domain Suite', () => {
         showtimesController.createShowtime({
           movie_id: 'movie-1',
           auditorium_id: 'aud-1',
-          start_time: '2026-08-20T18:30:00.000Z',
-          end_time: '2026-08-20T21:00:00.000Z',
+          start_time: '2026-08-20T20:40:00.000Z', // 10 minutes after mockShowtime ends (within 20m buffer)
+          end_time: '2026-08-20T22:30:00.000Z',
           base_price: 150,
         }),
       ).rejects.toThrow(RpcException);

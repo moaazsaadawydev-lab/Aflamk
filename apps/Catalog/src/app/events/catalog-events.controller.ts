@@ -20,6 +20,7 @@ export class CatalogEventsController {
   ) {
     const channel = context.getChannelRef();
     const originalMsg = context.getMessage();
+
     try {
       this.logger.log(`Received review.created event: ${JSON.stringify(data)}`);
 

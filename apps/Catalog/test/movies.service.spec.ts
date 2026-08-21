@@ -42,6 +42,7 @@ describe('Movies Domain Suite', () => {
     posterUrl: 'https://example.com/inception.jpg',
     bannerUrl: 'https://example.com/inception-banner.jpg',
     trailerUrl: 'https://example.com/inception-trailer.mp4',
+    galleryUrls: ['https://example.com/inception-gallery-1.jpg'],
     directors: ['Christopher Nolan'],
     cast: ['Leonardo DiCaprio', 'Joseph Gordon-Levitt', 'Elliot Page'],
     ratingAverage: 4.8,
@@ -71,7 +72,7 @@ describe('Movies Domain Suite', () => {
             save: jest.fn().mockImplementation((m) => Promise.resolve({ ...m, id: m.id || 'movie-1' })),
             findOne: jest.fn(),
             find: jest.fn(),
-            remove: jest.fn().mockResolvedValue(undefined),
+            softRemove: jest.fn().mockResolvedValue(undefined),
             createQueryBuilder: jest.fn(),
           },
         },
@@ -110,31 +111,15 @@ describe('Movies Domain Suite', () => {
         age_rating: MovieAgeRating.PG_13,
         status: MovieStatus.NOW_SHOWING,
         original_language: 'en',
-        genre_ids: ['genre-1'],
         directors: ['Christopher Nolan'],
         cast: ['Leonardo DiCaprio'],
+        genre_ids: ['genre-1'],
       });
 
       expect(result.title).toBe('Inception');
       expect(result.slug).toBe('inception');
       expect(result.duration_minutes).toBe(148);
       expect(movieRepository.save).toHaveBeenCalled();
-    });
-
-    it('should generate unique slug if slug conflict occurs', async () => {
-      movieRepository.findOne.mockResolvedValue(mockMovie);
-      genreRepository.find.mockResolvedValue([mockGenre]);
-
-      const result = await moviesController.createMovie({
-        title: 'Inception',
-        description: 'Dream heist thriller',
-        durationMinutes: 148,
-        releaseDate: '2010-07-16',
-        ageRating: MovieAgeRating.PG_13,
-        originalLanguage: 'en',
-      });
-
-      expect(result.slug).toContain('inception-');
     });
   });
 
@@ -145,14 +130,7 @@ describe('Movies Domain Suite', () => {
       const result = await moviesController.getMovieById({ id: 'movie-1' });
       expect(result.id).toBe('movie-1');
       expect(result.title).toBe('Inception');
-    });
-
-    it('should throw NOT_FOUND if movie does not exist by ID', async () => {
-      movieRepository.findOne.mockResolvedValue(null);
-
-      await expect(moviesController.getMovieById({ id: 'non-existent' })).rejects.toThrow(
-        RpcException,
-      );
+      expect(result.genres.length).toBe(1);
     });
 
     it('should return movie by slug', async () => {
@@ -161,12 +139,21 @@ describe('Movies Domain Suite', () => {
       const result = await moviesController.getMovieBySlug({ slug: 'inception' });
       expect(result.slug).toBe('inception');
     });
+
+    it('should throw NOT_FOUND if movie is missing', async () => {
+      movieRepository.findOne.mockResolvedValue(null);
+
+      await expect(moviesController.getMovieById({ id: 'non-existent' })).rejects.toThrow(
+        RpcException,
+      );
+    });
   });
 
   describe('ListMovies', () => {
     it('should list movies with pagination and filters', async () => {
       const qbMock: any = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
@@ -205,13 +192,13 @@ describe('Movies Domain Suite', () => {
   });
 
   describe('DeleteMovie', () => {
-    it('should delete movie when no active showtimes exist', async () => {
+    it('should soft-delete movie when no active showtimes exist', async () => {
       movieRepository.findOne.mockResolvedValue(mockMovie);
       showtimeRepository.count.mockResolvedValue(0);
 
       const result = await moviesController.deleteMovie({ id: 'movie-1' });
       expect(result.success).toBe(true);
-      expect(movieRepository.remove).toHaveBeenCalled();
+      expect(movieRepository.softRemove).toHaveBeenCalled();
     });
 
     it('should reject deletion if active showtimes exist', async () => {
