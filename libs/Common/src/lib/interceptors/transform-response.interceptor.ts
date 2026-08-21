@@ -94,7 +94,7 @@ export class TransformResponseInterceptor<T>
           }
 
           if (
-            ('id' in sanitized || 'email' in sanitized) &&
+            'email' in sanitized &&
             !('user' in dataPayload) &&
             !('accessToken' in dataPayload) &&
             !('access_token' in dataPayload)

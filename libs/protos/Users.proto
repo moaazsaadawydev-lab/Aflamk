@@ -97,6 +97,7 @@ message CurrentUserResponse {
   optional string status_reason = 9;
   optional string suspended_until = 10;
   optional string status_changed_at = 11;
+  string role = 12;
 }
 
 message RefreshTokenRequest {
@@ -133,6 +134,7 @@ message UpdateProfileResponse {
   optional string status_reason = 8;
   optional string suspended_until = 9;
   optional string status_changed_at = 10;
+  string role = 11;
 }
 
 message ChangePasswordRequest {
